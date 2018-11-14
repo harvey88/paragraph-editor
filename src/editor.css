@@ -1,0 +1,112 @@
+.article_editor{
+  width: 400px;
+  /* height: 28px; */
+  outline: none;
+  margin: 80px auto;
+  background: #E0F2F1;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.paraf:empty::before {
+  content: 'Enter your text';
+  color: grey;
+  font-size: 12px;
+}
+
+
+/* popup */
+
+.wrapper{
+  top: 30px;
+  left: 0;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+}
+
+.background{
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  z-index: 11;
+}
+
+.window{
+  position: absolute;
+  width: 230px;
+  height: 10px;
+  padding: 20px 0px;
+  border-radius: 10px;
+  background-color: #000;
+  color: #000000;
+  opacity: 1;
+  box-shadow: 0 0 16px 0 #d8d8d8;
+  /* left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0; */
+  margin: auto auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: initial;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  flex-direction: row;
+}
+
+.button {
+  width: 30px;
+  height: 30px;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  cursor: pointer;
+  opacity: 1;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  display: inline-block;
+  vertical-align: top;
+  color: #fff;
+  font-size: 15px;
+}
+
+.divider{
+  width: 1px;
+  height: 30px;
+  background-color: #555;
+  display: inline-block;
+  margin: 0 10px;
+  vertical-align: top;
+}
+
+blockquote {
+  padding: 0 30px 0 70px;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5em;
+  border-left: 2px solid #000;
+  padding-left: 18px;
+}
+
+.article_editor sup {
+  vertical-align: inherit;
+  font-size: inherit;
+  background-color: #c3d9ec;
+}
+
+.paragraph_editor::after{
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.close_input {
+  color: #fff;
+  cursor: pointer;
+}
