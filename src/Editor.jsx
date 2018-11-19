@@ -15,10 +15,14 @@ class Editor extends Component {
 
   componentDidMount() {
   }
+  componentWillReceiveProps(newProps) {
+    console.log('newProps', newProps)
+  }
 
-  telectionText = e => {
+  SelectionText = e => {
     if (window.getSelection().toString() !== '') {
       this.handleOpen()
+      console.log('select', window.getSelection())
 
       const leftOffset = e.clientX - this.option.offsetParent.offsetLeft
       const topOffset = e.clientY - this.option.offsetParent.offsetTop
@@ -32,17 +36,23 @@ class Editor extends Component {
     console.log('value', value)
     if (value === 'formatBlock') {
       document.execCommand(value, false, '<h2>')
+      // console.log('document.getElementsByTagName', document.getElementsByTagName('h2'))
+      document.getElementsByTagName('h2')[0].classList.add('paragraph_editor')
     } else {
       document.execCommand(value)
     }
     if (value === 'blockquote') {
       document.execCommand('formatBlock', false, '<blockquote>')
     }
+    // if (value === 'italic') {
+    //   document.execCommand('italic', false, null)
+    // }
+    if (value === 'heading') {
+      document.execCommand('formatBlock', false, 'h3')   
+    }
 
     if (value === 'createLink') {
-      this.setState({
-        showInput: true
-      })
+      this.setState({ showInput: true })
       document.execCommand('superscript',null,null)
     }
 
@@ -51,7 +61,7 @@ class Editor extends Component {
   mouseOver = () => {
     var list = document.getElementsByTagName('a')
     if (list){
-      console.log('mouse')
+      // console.log('mouse')
     }
   }
 
@@ -61,32 +71,41 @@ class Editor extends Component {
     if(event.key === 'Enter'){
       console.log('enter press here! ')
       this.setState({
-        showInput: false
+        showInput: false,
+        showPopUp: false
       })
       const element = document.getElementById('editor')
       const link = element.getElementsByTagName('sup')[0]
       const text = element.getElementsByTagName('sup')[0].innerHTML
-      var newEl = document.createElement('a')
+      let newEl = document.createElement('a')
       newEl.href = `http://${this.state.linkUrl}`;
       newEl.innerHTML = `${text}`;
       link.parentNode.replaceChild(newEl, link);
     }
   }
 
-  newParagraph = (event) => {
-    if(event.key === 'Enter') {
-      document.execCommand('defaultParagraphSeparator', false, 'p')
-      document.getElementsByTagName('p').className = 'rr'
+  setParagraph = (event) => {
+    if(event.keyCode === 8) {
+      if (this.option.childNodes.length === 0) {
+        let basicElement = document.createElement('p')
+        basicElement.innerHTML = '&nbsp;'
+        basicElement.className = 'paragraph_editor'
+        this.option.appendChild( basicElement )
+      }
     }
   }
 
-  setParagraph = () => {
-    console.log('yeeeeees')
-    // var div = document.createElement('p')
-    //   div.setAttribute('class', 'note')
-    //   document.body.appendChild(div);
+  save = () => {
+    const data = []
+    console.log('save', this.option)
+    let content = this.option.childNodes
+    content = Array.prototype.slice.call(content)
+    console.log('content', content)
+    content.forEach(el => {
+      const children = el.children
+      console.log('innerText', el.innerHTML)
+    })
   }
-
 
 
   handleOpen = () => {
@@ -106,14 +125,14 @@ class Editor extends Component {
         ref={node => (this.option = node)}
         className='article_editor paraf'
         contentEditable 
-        onMouseUp={this.telectionText}
+        onMouseUp={this.SelectionText}
         onMouseOver={this.mouseOver}
-        onKeyPress={this.newParagraph}
-        onClick={this.setParagraph}
+        onKeyUp={this.setParagraph}
         id='editor'
-        >
-        <p className='paragraph_editor'></p>
+      >
+        <p className='paragraph_editor'>&nbsp;</p>
       </div>
+      <button onClick={this.save} >save</button>
         {showPopUp &&
           <Popup 
             handleClose={this.handleClose}
@@ -153,7 +172,7 @@ class Popup extends Component {
                 {/* <img onClick={(e) => this.props.handleChangeStyle(e, 'unlink')} style={{width: '20px', fill:'red'}} src={LinkIcon} className='button' alt="link" /> */}
                 <div className='divider'></div>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'formatBlock')} className='button'>H</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'italic')} className='button'>n</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'heading')} className='button'>n</button>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'blockquote')} className='button'>"</button>
               </Fragment>
             }

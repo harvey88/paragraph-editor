@@ -8,7 +8,7 @@
   border-radius: 5px;
 }
 
-.paraf:empty::before {
+.paragraph_editor:empty::before {
   content: 'Enter your text';
   color: grey;
   font-size: 12px;
@@ -100,11 +100,6 @@ blockquote {
   background-color: #c3d9ec;
 }
 
-.paragraph_editor::after{
-  content: "";
-  display: table;
-  clear: both;
-}
 
 .close_input {
   color: #fff;
