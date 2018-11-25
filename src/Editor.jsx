@@ -10,13 +10,13 @@ class Editor extends Component {
       linkUrl: '',
       showInput: false,
       popOverPosition: {},
+      paragraphs: [
+        {type: "html", data: [], params: {style: ""}},
+      ]
     }
   }
 
   componentDidMount() {
-  }
-  componentWillReceiveProps(newProps) {
-    console.log('newProps', newProps)
   }
 
   SelectionText = e => {
@@ -85,6 +85,7 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
+    // console.log('dsfsdfs', this.option.childNodes)
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
         let basicElement = document.createElement('p')
@@ -93,17 +94,30 @@ class Editor extends Component {
         this.option.appendChild( basicElement )
       }
     }
+    if(event.keyCode === 13) {
+      this.setState(prev => ({
+        paragraphs: [...prev.paragraphs, {type: "html", data: [], params: {style: ""}},]
+      }), () => this.createNode())
+    }
+  }
+
+  createNode = () => {
+    let sel= window.getSelection()
+    const node = sel.anchorNode
+    node.remove()
+
   }
 
   save = () => {
-    const data = []
-    console.log('save', this.option)
+    // const data = []
+    console.log('state', this.state.paragraphs)
+    // console.log('save', this.option)
     let content = this.option.childNodes
     content = Array.prototype.slice.call(content)
     console.log('content', content)
     content.forEach(el => {
-      const children = el.children
-      console.log('innerText', el.innerHTML)
+      // const children = el.children
+      // console.log('innerText', el.innerHTML)
     })
   }
 
@@ -130,7 +144,9 @@ class Editor extends Component {
         onKeyUp={this.setParagraph}
         id='editor'
       >
-        <p className='paragraph_editor'>&nbsp;</p>
+        {this.state.paragraphs.map(({type, data, params}, index) => {
+          return <Paragraph key={index} index={index} />
+        })}
       </div>
       <button onClick={this.save} >save</button>
         {showPopUp &&
@@ -148,6 +164,11 @@ class Editor extends Component {
     );
   }
 }
+
+const Paragraph = () => {
+  return <p  className='paragraph_editor'></p>
+} 
+
 
 class Popup extends Component {
   render() {
