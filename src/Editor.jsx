@@ -2,6 +2,8 @@ import React, { Component, Fragment } from 'react'
 import './editor.css';
 import LinkIcon from './link.svg'
 
+const ref = React.createRef();
+
 class Editor extends Component {
   constructor() {
     super() 
@@ -11,7 +13,7 @@ class Editor extends Component {
       showInput: false,
       popOverPosition: {},
       paragraphs: [
-        {type: "html", data: [], params: {style: ""}},
+        {type: "html", index:null, data: [], params: {style: ""}}
       ]
     }
   }
@@ -85,7 +87,6 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
-    // console.log('dsfsdfs', this.option.childNodes)
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
         let basicElement = document.createElement('p')
@@ -95,14 +96,18 @@ class Editor extends Component {
       }
     }
     if(event.keyCode === 13) {
+    // console.log('ref', ref)
       this.setState(prev => ({
-        paragraphs: [...prev.paragraphs, {type: "html", data: [], params: {style: ""}},]
+        paragraphs: [...prev.paragraphs, 
+          {type: "html", index:null, data: [], params: {style: ""}}
+        ]
       }), () => this.createNode())
     }
   }
 
+
   createNode = () => {
-    let sel= window.getSelection()
+    const sel= window.getSelection()
     const node = sel.anchorNode
     node.remove()
 
@@ -115,10 +120,10 @@ class Editor extends Component {
     let content = this.option.childNodes
     content = Array.prototype.slice.call(content)
     console.log('content', content)
-    content.forEach(el => {
-      // const children = el.children
-      // console.log('innerText', el.innerHTML)
-    })
+    // content.forEach(el => {
+    //   // const children = el.children
+    //   // console.log('innerText', el.innerHTML)
+    // })
   }
 
 
@@ -145,7 +150,7 @@ class Editor extends Component {
         id='editor'
       >
         {this.state.paragraphs.map(({type, data, params}, index) => {
-          return <Paragraph key={index} index={index} />
+          return <Paragraph ref={ref} key={index} index={index} />
         })}
       </div>
       <button onClick={this.save} >save</button>
@@ -165,9 +170,9 @@ class Editor extends Component {
   }
 }
 
-const Paragraph = () => {
-  return <p  className='paragraph_editor'></p>
-} 
+const Paragraph = React.forwardRef(({index}, ref) => (
+  <p index={index} ref={ref} className='paragraph_editor'></p>
+))
 
 
 class Popup extends Component {
