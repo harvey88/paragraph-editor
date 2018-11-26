@@ -15,7 +15,10 @@ class Editor extends Component {
       paragraphs: [
         {type: "html", data: [], params: {style: ""}}
       ],
-      selectedTag: null
+      selectedTag: null,
+      hoverLink: null,
+      showHoverLink: null,
+      popOverPositionLink: {}
     }
   }
 
@@ -32,8 +35,6 @@ class Editor extends Component {
 
       if(selectedText){
         const parentElement = selectedText.anchorNode.parentElement.localName
-        // console.log('select', selectedText)
-        // console.log('parentElement', parentElement)
         switch(parentElement) {
           case 'h1': return this.setState({ selectedTag: parentElement })
           case 'h2': return this.setState({ selectedTag: parentElement })
@@ -104,10 +105,21 @@ class Editor extends Component {
 
   }
 
-  mouseOver = () => {
-    var list = document.getElementsByTagName('a')
-    if (list){
-      // console.log('mouse')
+  mouseOver = (el) => {
+    // console.log('event.clientX', el.pageX)
+    // console.log('el.clientY', el.pageY)
+    const link = el.target.tagName
+    // console.log('mouseOver', el.target.tagName)    
+    if (link === 'A'){
+
+      this.setState({
+        showHoverLink: link,
+        hoverLink: el.target.href
+      })
+    } else {
+        this.setState({
+          showHoverLink: null
+        })
     }
   }
 
@@ -194,7 +206,7 @@ class Editor extends Component {
     this.setState({  showInput: false })
   }
   render() {
-    const { showPopUp, showInput, selectedTag } = this.state
+    const { showPopUp, showInput, selectedTag, hoverLink, showHoverLink } = this.state
     return (
       <Fragment>
       <div 
@@ -203,6 +215,7 @@ class Editor extends Component {
         contentEditable 
         onMouseUp={this.SelectionText}
         onMouseOver={this.mouseOver}
+        onMouseOut={this.mouseOver}
         onKeyUp={this.setParagraph}
         id='editor'
         suppressContentEditableWarning={true}
@@ -222,7 +235,15 @@ class Editor extends Component {
             popOverPosition={this.state.popOverPosition}
             handleCloseInput={this.handleCloseInput}
             selectedTag={selectedTag}
+            hoverLink={hoverLink}
           />
+        }
+        {showHoverLink &&
+          <PopupHoverLink 
+            popOverPosition={this.state.popOverPosition}
+            hoverLink={hoverLink}
+        />
+
         }
       </Fragment>
     );
@@ -274,4 +295,22 @@ class Popup extends Component {
   }
 }
 
-export default Editor;
+class PopupHoverLink extends Component {
+  render() {
+    const { popOverPosition, hoverLink } = this.props
+    return (
+      <div className='wrapper' style={{position: 'absolute', height: 'auto', width: 'auto'}} >
+        <div className='background' style={{position: 'absolute'}}>
+          <div className='window' 
+            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
+            onClick={e => e.stopPropagation()}>
+            <a href={hoverLink} target={'_blank'}>{hoverLink}</a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default Editor
+
