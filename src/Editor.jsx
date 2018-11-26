@@ -14,7 +14,8 @@ class Editor extends Component {
       popOverPosition: {},
       paragraphs: [
         {type: "html", data: [], params: {style: ""}}
-      ]
+      ],
+      selectedTag: null
     }
   }
 
@@ -24,11 +25,23 @@ class Editor extends Component {
   SelectionText = e => {
     if (window.getSelection().toString() !== '') {
       this.handleOpen()
-      console.log('select', window.getSelection())
-
+      const selectedText = window.getSelection()
       const leftOffset = e.clientX - this.option.offsetParent.offsetLeft
       const topOffset = e.clientY - this.option.offsetParent.offsetTop
       this.setPositionOfPopOver(topOffset, leftOffset)
+
+      if(selectedText){
+        const parentElement = selectedText.anchorNode.parentElement.localName
+        // console.log('select', selectedText)
+        // console.log('parentElement', parentElement)
+        switch(parentElement) {
+          case 'h1': return this.setState({ selectedTag: parentElement })
+          case 'h2': return this.setState({ selectedTag: parentElement })
+          case 'h3': return this.setState({ selectedTag: parentElement })
+          default:
+            return this.setState({ selectedTag: parentElement })
+        }  
+      }
     }
   }
   setPositionOfPopOver = (top, left) => this.setState({ popOverPosition: { top, left } })
@@ -36,16 +49,47 @@ class Editor extends Component {
 
   handleChangeStyle = (e, value) => {
     console.log('value', value)
+    const { selectedTag } = this.state
     switch (value) {
-      case "h1": return (
-        document.execCommand('formatBlock', false, '<h1>')
-      ) 
-      case "h2": return (
-        document.execCommand('formatBlock', false, '<h2>')
-      )
-      case "h3": return (
-        document.execCommand('formatBlock', false, '<h3>')
-      )
+      case "h1": {
+        if (selectedTag === 'h1') {
+          return (
+            document.execCommand("formatblock", false, 'p'),
+            this.setState({ selectedTag: 'p' })
+          ) 
+        } else {
+          return (
+            document.execCommand('formatBlock', false, '<h1>'),
+            this.setState({ selectedTag: value })
+          ) 
+        }
+      } 
+      case "h2": {
+        if (selectedTag === 'h2') {
+          return (
+            document.execCommand('formatblock', false, 'p'),
+            this.setState({ selectedTag: 'p' })
+          ) 
+        } else {
+          return (
+            document.execCommand('formatBlock', false, '<h2>'),
+            this.setState({ selectedTag: value })
+          ) 
+        }
+      }
+      case "h3": {
+        if (selectedTag === 'h3') {
+          return (
+            document.execCommand('formatblock', false, 'p'),
+            this.setState({ selectedTag: 'p' })
+          ) 
+        } else {
+          return (
+            document.execCommand('formatBlock', false, '<h3>'),
+            this.setState({ selectedTag: value })
+          ) 
+        }
+      } 
       case "bold": return document.execCommand('bold', false, null)
       case "italic": return document.execCommand('italic', false, null)
       case "strikethrough": return document.execCommand('strikethrough', false, null)
@@ -87,7 +131,6 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
-    // console.log('ref', ref)
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
         let basicElement = document.createElement('p')
@@ -96,7 +139,6 @@ class Editor extends Component {
       }
     }
     if(event.keyCode === 13) {
-    // console.log('ref', ref)
       this.setState(prev => ({
         paragraphs: [...prev.paragraphs, 
           {type: "html", data: [], params: {style: ""}}
@@ -121,9 +163,8 @@ class Editor extends Component {
     console.log('content', content)
     content.forEach(el => {
       if(el.innerText){
-        const children = el.children
         const dataHTML = el.innerHTML
-        if(children.length) {
+        if(el.localName === 'p') {
           data.push({data: dataHTML, type:'html'})
         } else {
           switch (el.localName) {
@@ -153,7 +194,7 @@ class Editor extends Component {
     this.setState({  showInput: false })
   }
   render() {
-    const { showPopUp, showInput } = this.state
+    const { showPopUp, showInput, selectedTag } = this.state
     return (
       <Fragment>
       <div 
@@ -164,6 +205,7 @@ class Editor extends Component {
         onMouseOver={this.mouseOver}
         onKeyUp={this.setParagraph}
         id='editor'
+        suppressContentEditableWarning={true}
       >
         {this.state.paragraphs.map(({type, data, params}, index) => {
           return <Paragraph ref={ref} key={index} index={index} />
@@ -179,6 +221,7 @@ class Editor extends Component {
             showInput={showInput}
             popOverPosition={this.state.popOverPosition}
             handleCloseInput={this.handleCloseInput}
+            selectedTag={selectedTag}
           />
         }
       </Fragment>
@@ -193,12 +236,12 @@ const Paragraph = React.forwardRef(({index}, ref) => (
 
 class Popup extends Component {
   render() {
-    const { handleClose, showInput, addLink, add, popOverPosition, handleCloseInput } = this.props
+    const { handleClose, showInput, addLink, add, popOverPosition, handleCloseInput, selectedTag } = this.props
     return (
       <div className='wrapper'>
         <div className='background' onClick={handleClose}>
           <div className='window' 
-            style={{top: `${popOverPosition.top}px`, left: `${popOverPosition.left}px` }}
+            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
             onClick={e => e.stopPropagation()}>
             {showInput ? 
               <Fragment>
@@ -207,15 +250,20 @@ class Popup extends Component {
               </Fragment>
               :
               <Fragment>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'bold')} className='button'>B</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'italic')} className='button'>I</button>
+                {selectedTag === 'h1' || selectedTag === 'h2' || selectedTag === 'h3' ? null: 
+                  <Fragment>
+                    <button onClick={(e) => this.props.handleChangeStyle(e, 'bold')} className='button'>B</button>
+                    <button onClick={(e) => this.props.handleChangeStyle(e, 'italic')} className='button'>I</button>
+                  </Fragment>
+                }
+                
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'strikethrough')} className='button'>S</button>
                 <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={LinkIcon} className='button' alt="link" />
                 <div className='divider'></div>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'h1')} className='button'>h1</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'h2')} className='button'>h2</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'h3')} className='button'>h3</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'blockquote')} className='button'>"</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h1')} style={selectedTag === 'h1' ? {color: '#5cb8ff'}: {}} className='button'>H1</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h2')} style={selectedTag === 'h2' ? {color: '#5cb8ff'}: {}} className='button'>H2</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h3')} style={selectedTag === 'h3' ? {color: '#5cb8ff'}: {}} className='button'>H3</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'blockquote')} className='button'>&#8220;</button>
               </Fragment>
             }
             
