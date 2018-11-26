@@ -13,7 +13,7 @@ class Editor extends Component {
       showInput: false,
       popOverPosition: {},
       paragraphs: [
-        {type: "html", index:null, data: [], params: {style: ""}}
+        {type: "html", data: [], params: {style: ""}}
       ]
     }
   }
@@ -36,26 +36,26 @@ class Editor extends Component {
 
   handleChangeStyle = (e, value) => {
     console.log('value', value)
-    if (value === 'formatBlock') {
-      document.execCommand(value, false, '<h2>')
-      // console.log('document.getElementsByTagName', document.getElementsByTagName('h2'))
-      document.getElementsByTagName('h2')[0].classList.add('paragraph_editor')
-    } else {
-      document.execCommand(value)
-    }
-    if (value === 'blockquote') {
-      document.execCommand('formatBlock', false, '<blockquote>')
-    }
-    // if (value === 'italic') {
-    //   document.execCommand('italic', false, null)
-    // }
-    if (value === 'heading') {
-      document.execCommand('formatBlock', false, 'h3')   
-    }
-
-    if (value === 'createLink') {
-      this.setState({ showInput: true })
-      document.execCommand('superscript',null,null)
+    switch (value) {
+      case "h1": return (
+        document.execCommand('formatBlock', false, '<h1>')
+      ) 
+      case "h2": return (
+        document.execCommand('formatBlock', false, '<h2>')
+      )
+      case "h3": return (
+        document.execCommand('formatBlock', false, '<h3>')
+      )
+      case "bold": return document.execCommand('bold', false, null)
+      case "italic": return document.execCommand('italic', false, null)
+      case "strikethrough": return document.execCommand('strikethrough', false, null)
+      case "createLink": return (
+        this.setState({ showInput: true }),
+        document.execCommand('superscript', null, null)
+      ) 
+      case "blockquote": return document.execCommand('formatBlock', false, '<blockquote>')
+      default:
+        return null
     }
 
   }
@@ -87,10 +87,10 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
+    // console.log('ref', ref)
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
         let basicElement = document.createElement('p')
-        basicElement.innerHTML = '&nbsp;'
         basicElement.className = 'paragraph_editor'
         this.option.appendChild( basicElement )
       }
@@ -99,7 +99,7 @@ class Editor extends Component {
     // console.log('ref', ref)
       this.setState(prev => ({
         paragraphs: [...prev.paragraphs, 
-          {type: "html", index:null, data: [], params: {style: ""}}
+          {type: "html", data: [], params: {style: ""}}
         ]
       }), () => this.createNode())
     }
@@ -114,16 +114,32 @@ class Editor extends Component {
   }
 
   save = () => {
-    // const data = []
+    const data = []
     console.log('state', this.state.paragraphs)
-    // console.log('save', this.option)
     let content = this.option.childNodes
     content = Array.prototype.slice.call(content)
     console.log('content', content)
-    // content.forEach(el => {
-    //   // const children = el.children
-    //   // console.log('innerText', el.innerHTML)
-    // })
+    content.forEach(el => {
+      if(el.innerText){
+        const children = el.children
+        const dataHTML = el.innerHTML
+        if(children.length) {
+          data.push({data: dataHTML, type:'html'})
+        } else {
+          switch (el.localName) {
+            case 'h1': return data.push({data: dataHTML, type:'heading', params:{'size': 'h1'} })
+            case 'h2': return data.push({data: dataHTML, type:'heading', params:{'size': 'h2'} })
+            case 'h3': return data.push({data: dataHTML, type:'heading', params:{'size': 'h3'} })
+            case 'blockquote': return data.push({data: dataHTML, type:'blockquote' })
+            default:
+              return data.push({data: dataHTML, type:'text' })
+          }
+        }     
+      }
+    })
+    const json = JSON.stringify(data)
+    console.log('data', data)
+    console.log('json', json)
   }
 
 
@@ -195,10 +211,10 @@ class Popup extends Component {
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'italic')} className='button'>I</button>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'strikethrough')} className='button'>S</button>
                 <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={LinkIcon} className='button' alt="link" />
-                {/* <img onClick={(e) => this.props.handleChangeStyle(e, 'unlink')} style={{width: '20px', fill:'red'}} src={LinkIcon} className='button' alt="link" /> */}
                 <div className='divider'></div>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'formatBlock')} className='button'>H</button>
-                <button onClick={(e) => this.props.handleChangeStyle(e, 'heading')} className='button'>n</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h1')} className='button'>h1</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h2')} className='button'>h2</button>
+                <button onClick={(e) => this.props.handleChangeStyle(e, 'h3')} className='button'>h3</button>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'blockquote')} className='button'>"</button>
               </Fragment>
             }
