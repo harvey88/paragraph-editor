@@ -21,6 +21,10 @@
   font-style: normal;
 }
 
+.article_editor a{
+  display: inline;
+}
+
 
 /* popup */
 

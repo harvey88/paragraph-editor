@@ -1,6 +1,9 @@
 import React, { Component, Fragment } from 'react'
 import './editor.css';
 import LinkIcon from './link.svg'
+import LinkIconSelect from './link_select.svg'
+// import { ReactComponent as LinkIcon } from './link.svg'
+
 
 const ref = React.createRef();
 
@@ -23,6 +26,16 @@ class Editor extends Component {
   }
 
   componentDidMount() {
+    // const data = [{data:"dfkjgh dkfgjdklfgj dg <i>df<b>gsdfg</b></i>",type:"heading",params:{size:"h1"}},
+    //               {"data":"dfg dgdf gdg<a href=\"http://dfdf\">fsd</a>&nbsp;ddfgdfgdfgdgdfg&nbsp;","type":"html"},
+    //               {"data":"f gdfg dfg dg df","type":"html"},
+    //               {"data":"s dfg sdfgs dfgs d","type":"html"},
+    //               {"data":"g dsfg dfgjk hdfkjg hsdfgkjs","type":"heading","params":{"size":"h2"}}]
+    // // const jsonParse = JSON.parse(data)
+    // console.log('jsonParse', data)
+    // this.setState({
+    //   paragraphs: data
+    // })
   }
 
   SelectionText = e => {
@@ -32,6 +45,7 @@ class Editor extends Component {
       const leftOffset = e.clientX - this.option.offsetParent.offsetLeft
       const topOffset = e.clientY - this.option.offsetParent.offsetTop
       this.setPositionOfPopOver(topOffset, leftOffset)
+      console.log('selectedText', selectedText)
 
       if(selectedText){
         const parentElement = selectedText.anchorNode.parentElement.localName
@@ -39,6 +53,7 @@ class Editor extends Component {
           case 'h1': return this.setState({ selectedTag: parentElement })
           case 'h2': return this.setState({ selectedTag: parentElement })
           case 'h3': return this.setState({ selectedTag: parentElement })
+          case 'a': return this.setState({ selectedTag: parentElement })
           default:
             return this.setState({ selectedTag: parentElement })
         }  
@@ -94,10 +109,24 @@ class Editor extends Component {
       case "bold": return document.execCommand('bold', false, null)
       case "italic": return document.execCommand('italic', false, null)
       case "strikethrough": return document.execCommand('strikethrough', false, null)
-      case "createLink": return (
-        this.setState({ showInput: true }),
-        document.execCommand('superscript', null, null)
-      ) 
+      case "createLink": {
+        if (selectedTag === 'a') {
+          console.log('createLink createLink')
+          return (
+            document.execCommand('unlink', false, null),
+            this.setState({ selectedTag: null })
+          ) 
+        } else {
+          return (
+            this.setState({ showInput: true }),
+            document.execCommand('superscript', null, null)
+          ) 
+        }
+      }
+      // return (
+      //   this.setState({ showInput: true }),
+      //   document.execCommand('superscript', null, null)
+      // ) 
       case "blockquote": return document.execCommand('formatBlock', false, '<blockquote>')
       default:
         return null
@@ -106,20 +135,31 @@ class Editor extends Component {
   }
 
   mouseOver = (el) => {
-    // console.log('event.clientX', el.pageX)
-    // console.log('el.clientY', el.pageY)
-    const link = el.target.tagName
-    // console.log('mouseOver', el.target.tagName)    
+    this.setState({
+      popOverPositionLink: {
+        top: el.pageY,
+        left: el.pageX
+      }
+    })
+    const link = el.target.tagName  
     if (link === 'A'){
-
       this.setState({
         showHoverLink: link,
         hoverLink: el.target.href
       })
-    } else {
-        this.setState({
-          showHoverLink: null
-        })
+    } 
+  }
+
+  mouseOut = (el) => {
+    const link = el.target.tagName  
+    if (link === 'A'){
+      setTimeout( 
+        () => {
+          this.setState({
+            showHoverLink: null
+          })
+        }, 2000
+      )
     }
   }
 
@@ -200,13 +240,26 @@ class Editor extends Component {
     this.setState({ showPopUp: true })
   }
   handleClose = () => {
-    this.setState({ showPopUp: false, showInput: false })
+    this.setState({ showPopUp: false, showInput: false },
+      () => {
+        if(!this.state.showInput){
+          const element = document.getElementById('editor')
+          const link = element.getElementsByTagName('sup')[0]
+          if(link) { 
+            const oldTextLink = link.parentNode
+            while(link.firstChild) oldTextLink.insertBefore(link.firstChild, link)
+            oldTextLink.removeChild(link)
+          }
+        }
+      })
   }
+
   handleCloseInput = () => {
     this.setState({  showInput: false })
   }
+
   render() {
-    const { showPopUp, showInput, selectedTag, hoverLink, showHoverLink } = this.state
+    const { showPopUp, showInput, selectedTag, hoverLink, showHoverLink, popOverPositionLink } = this.state
     return (
       <Fragment>
       <div 
@@ -215,13 +268,13 @@ class Editor extends Component {
         contentEditable 
         onMouseUp={this.SelectionText}
         onMouseOver={this.mouseOver}
-        onMouseOut={this.mouseOver}
+        onMouseOut={this.mouseOut}
         onKeyUp={this.setParagraph}
         id='editor'
         suppressContentEditableWarning={true}
       >
         {this.state.paragraphs.map(({type, data, params}, index) => {
-          return <Paragraph ref={ref} key={index} index={index} />
+          return <Paragraph ref={ref} data={data} params={params} type={type} key={index} index={index} />
         })}
       </div>
       <button onClick={this.save} >save</button>
@@ -240,7 +293,7 @@ class Editor extends Component {
         }
         {showHoverLink &&
           <PopupHoverLink 
-            popOverPosition={this.state.popOverPosition}
+            popOverPositionLink={popOverPositionLink}
             hoverLink={hoverLink}
         />
 
@@ -250,8 +303,8 @@ class Editor extends Component {
   }
 }
 
-const Paragraph = React.forwardRef(({index}, ref) => (
-  <p index={index} ref={ref} className='paragraph_editor'></p>
+const Paragraph = React.forwardRef(({index, data, type, params}, ref) => (
+  <p index={index} type={type} params={params} ref={ref} className='paragraph_editor'>{data}</p>
 ))
 
 
@@ -279,7 +332,7 @@ class Popup extends Component {
                 }
                 
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'strikethrough')} className='button'>S</button>
-                <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={LinkIcon} className='button' alt="link" />
+                <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={selectedTag === 'a' ? LinkIconSelect : LinkIcon} className='button' alt="link" />
                 <div className='divider'></div>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'h1')} style={selectedTag === 'h1' ? {color: '#5cb8ff'}: {}} className='button'>H1</button>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'h2')} style={selectedTag === 'h2' ? {color: '#5cb8ff'}: {}} className='button'>H2</button>
@@ -297,12 +350,12 @@ class Popup extends Component {
 
 class PopupHoverLink extends Component {
   render() {
-    const { popOverPosition, hoverLink } = this.props
+    const { popOverPositionLink, hoverLink } = this.props
     return (
       <div className='wrapper' style={{position: 'absolute', height: 'auto', width: 'auto'}} >
         <div className='background' style={{position: 'absolute'}}>
           <div className='window' 
-            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
+            style={{top: `${popOverPositionLink.top - 113}px`, left: `${popOverPositionLink.left - 134}px` }}
             onClick={e => e.stopPropagation()}>
             <a href={hoverLink} target={'_blank'}>{hoverLink}</a>
           </div>
