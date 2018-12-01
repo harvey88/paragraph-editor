@@ -2,7 +2,9 @@ import React, { Component, Fragment } from 'react'
 import './editor.css';
 import LinkIcon from './link.svg'
 import LinkIconSelect from './link_select.svg'
-// import { ReactComponent as LinkIcon } from './link.svg'
+import { ReactComponent as PlucIcon } from './pluc.svg'
+import { ReactComponent as CameraIcon } from './camera.svg'
+import Icon from './pluc.svg'
 
 
 const ref = React.createRef();
@@ -16,12 +18,17 @@ class Editor extends Component {
       showInput: false,
       popOverPosition: {},
       paragraphs: [
-        {type: "html", data: [], params: {style: ""}}
+        {type: "html", index: 0, data: [], params: {style: ""}}
       ],
       selectedTag: null,
       hoverLink: null,
       showHoverLink: null,
-      popOverPositionLink: {}
+      isShowPlucButton: false,
+      popOverPositionLink: {},
+      showPlucButtonPosition: {},
+      popOverPositionWidgets: {},
+      indexParagraph: null,
+      showWidgetsPopUp: false,
     }
   }
 
@@ -123,10 +130,6 @@ class Editor extends Component {
           ) 
         }
       }
-      // return (
-      //   this.setState({ showInput: true }),
-      //   document.execCommand('superscript', null, null)
-      // ) 
       case "blockquote": return document.execCommand('formatBlock', false, '<blockquote>')
       default:
         return null
@@ -183,28 +186,71 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
+    const {indexParagraph} = this.state
+    let content = this.option.childNodes
+    content = Array.prototype.slice.call(content)
+    content.shift()
+    // console.log('content', content)
+    content.map((el, index) => {
+      if (indexParagraph === index){
+        // console.log('el', el)
+        if(el.innerText !== ''){
+          this.setState({
+            isShowPlucButton: false
+          })
+        }
+      }
+    })
+
+
+
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
-        let basicElement = document.createElement('p')
+        const img = document.createElement('img')
+        img.src = Icon
+        img.className='article_showWidgets'
+        img.onclick = this.showWidgets
+        img.style = `top: ${this.state.showPlucButtonPosition}px`
+        this.option.appendChild( img )
+        const basicElement = document.createElement('p')
         basicElement.className = 'paragraph_editor'
         this.option.appendChild( basicElement )
       }
+      // let content = this.option.childNodes
+      // const index =  event.target.childElementCount -2
+      // content = Array.prototype.slice.call(content)
+      // content.shift()
+      // console.log('content', content)    
+      // const topPositionBtn = content[index].offsetTop
+      // this.setState({
+      //   showPlucButtonPosition: topPositionBtn
+      // })
     }
     if(event.keyCode === 13) {
+      const lastIndex = this.state.paragraphs.indexOf(this.state.paragraphs[this.state.paragraphs.length - 1])
+      // const index =  event.target.childElementCount -2
       this.setState(prev => ({
         paragraphs: [...prev.paragraphs, 
-          {type: "html", data: [], params: {style: ""}}
-        ]
+          {type: "html", index: lastIndex + 1, data: [], params: {style: ""}}
+        ],
+        // indexParagraph: index
       }), () => this.createNode())
     }
   }
 
 
   createNode = () => {
+    const { indexParagraph } = this.state
     const sel= window.getSelection()
     const node = sel.anchorNode
     node.remove()
-
+    let content = this.option.childNodes
+    content = Array.prototype.slice.call(content)
+    content.shift()
+    const topPositionBtn = content[indexParagraph].offsetTop
+    this.setState({
+      showPlucButtonPosition: topPositionBtn
+    })
   }
 
   save = () => {
@@ -258,8 +304,102 @@ class Editor extends Component {
     this.setState({  showInput: false })
   }
 
+  showWidgets = () => {
+    this.setState({
+      showWidgetsPopUp: true
+    })
+    console.log('showWidgets')
+  }
+
+  handleCloseWidgets = () => {
+    this.setState({
+      showWidgetsPopUp: false
+    })
+  }
+
+  showPlucButton = (e,index) => {
+    const selectedText = window.getSelection()
+    const topPositionBtn = selectedText.anchorNode.offsetTop
+    const topPositionWidgetPopOver = e.clientY - selectedText.anchorNode.offsetTop
+    // console.log('postiosn',selectedText)
+    // console.log('topPositionWidgetPopOver',topPositionWidgetPopOver)
+    // console.log('options', this.option.offsetParent.offsetLeft)
+    // console.log('options', this.option.offsetParent.offsetTop)
+    // console.log('e', e.clientX)
+    // console.log('e', e.clientY)
+    this.setState({
+      isShowPlucButton: true,
+      showPlucButtonPosition: topPositionBtn,
+      indexParagraph: index,
+      popOverPositionWidgets: {
+        top:  topPositionWidgetPopOver,
+        left: e.clientX
+      }
+    })
+  }
+
+  addPicture = () => {
+    const {indexParagraph} = this.state
+    this.setState({
+      showWidgetsPopUp: false
+    })
+    let content = this.option.childNodes
+    content = Array.prototype.slice.call(content)
+    content.shift()
+    content.map((el, index) => {
+      if (indexParagraph === index){
+        const div = document.createElement("div")
+        div.className = 'paragraph_add_picture'
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.onchange = this.handleAddImage
+        input.className = 'inputText'
+        const parent = el.parentNode     
+        parent.replaceChild(div, el)
+        div.appendChild(input)
+      }
+    })
+  }
+
+  handleAddImage = (event) => {
+    let content = this.option.childNodes
+    const file = URL.createObjectURL(event.target.files[0])
+    const img = document.createElement("img")
+    img.src = file
+    const newDiv = document.createElement("p")
+    newDiv.className = 'paragraph_picture'
+    newDiv.contentEditable='false'
+    const div = event.target.parentNode
+    const parent = div.parentNode
+
+    parent.replaceChild(newDiv, div)
+    newDiv.appendChild(img)
+    console.log('target', content)
+    console.log('event', event.target.parentNode)
+    console.log('div', div)
+    
+    this.setState(prev => ({
+      paragraphs: [...prev.paragraphs, 
+        {type: "html", data: [], params: {style: ""}}
+      ]
+    }))
+  }
+
+
   render() {
-    const { showPopUp, showInput, selectedTag, hoverLink, showHoverLink, popOverPositionLink } = this.state
+    const { 
+      showPopUp, 
+      showInput, 
+      selectedTag, 
+      hoverLink, 
+      showHoverLink, 
+      popOverPositionLink,
+      showPlucButtonPosition,
+      isShowPlucButton,
+      showWidgetsPopUp,
+      popOverPositionWidgets
+    } = this.state
+
     return (
       <Fragment>
       <div 
@@ -273,8 +413,25 @@ class Editor extends Component {
         id='editor'
         suppressContentEditableWarning={true}
       >
+      {isShowPlucButton && 
+        <PlucIcon 
+          style={{top: `${showPlucButtonPosition}px`}}  
+          className='article_showWidgets' 
+          onClick={this.showWidgets}
+        />
+      }
         {this.state.paragraphs.map(({type, data, params}, index) => {
-          return <Paragraph ref={ref} data={data} params={params} type={type} key={index} index={index} />
+          return <Paragraph 
+                      showPlucButton={this.showPlucButton} 
+                      showWidgets={this.showWidgets}
+                      data={data} 
+                      params={params} 
+                      type={type} 
+                      key={index} 
+                      index={index} 
+                      ref={ref}
+                      showPlucButtonPosition={showPlucButtonPosition}
+                      />
         })}
       </div>
       <button onClick={this.save} >save</button>
@@ -295,16 +452,26 @@ class Editor extends Component {
           <PopupHoverLink 
             popOverPositionLink={popOverPositionLink}
             hoverLink={hoverLink}
-        />
-
-        }
+        />}
+        {showWidgetsPopUp &&
+          <PopupWidgets
+            handleCloseWidgets={this.handleCloseWidgets}
+            addPicture={this.addPicture}
+            popOverPositionWidgets={popOverPositionWidgets}
+          />}
       </Fragment>
     );
   }
 }
 
-const Paragraph = React.forwardRef(({index, data, type, params}, ref) => (
-  <p index={index} type={type} params={params} ref={ref} className='paragraph_editor'>{data}</p>
+const Paragraph = React.forwardRef(({index, data, type, params, showPlucButton}, ref) => (
+    <p 
+      onClick={(e) => showPlucButton(e, index)} 
+      index={index} 
+      ref={ref} 
+      type={type} 
+      // params={params} 
+      className='paragraph_editor'>{data}</p>
 ))
 
 
@@ -358,6 +525,23 @@ class PopupHoverLink extends Component {
             style={{top: `${popOverPositionLink.top - 113}px`, left: `${popOverPositionLink.left - 134}px` }}
             onClick={e => e.stopPropagation()}>
             <a href={hoverLink} target={'_blank'}>{hoverLink}</a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+class PopupWidgets extends Component {
+  render() {
+    const { handleCloseWidgets, addPicture, popOverPositionWidgets } = this.props
+    return (
+      <div className='wrapper' >
+        <div className='background' onClick={handleCloseWidgets} >
+          <div className='window_widget' 
+            style={{top: `${popOverPositionWidgets.top - 25}px`, left: `${popOverPositionWidgets.left}px` }}
+            onClick={e => e.stopPropagation()}>
+              <CameraIcon onClick={addPicture}  style={{fill: '#fff'}} className='button' />
           </div>
         </div>
       </div>

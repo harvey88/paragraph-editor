@@ -6,6 +6,25 @@
   background: #E0F2F1;
   padding: 10px;
   border-radius: 5px;
+  position: relative;
+}
+
+.article_showWidgets{
+  position: absolute;
+  left: -30px;
+}
+
+.paragraph_add_picture{
+  width: 100%;
+  height: 300px;
+  border: 1px solid;
+}
+
+.paragraph_picture{
+  width: 100%;
+}
+.paragraph_picture > img{
+  width: 100%;
 }
 
 .paragraph_editor:empty::before {
@@ -54,10 +73,6 @@
   color: #000000;
   opacity: 1;
   box-shadow: 0 0 16px 0 #d8d8d8;
-  /* left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0; */
   margin: auto auto;
   z-index: 100;
   display: flex;
@@ -123,4 +138,37 @@ blockquote {
 .close_input {
   color: #fff;
   cursor: pointer;
+}
+
+
+/* popup widget */
+
+.window_widget {
+  position: absolute;
+  width: 150px;
+  height: 0px;
+  padding: 20px 0px;
+  border-radius: 10px;
+  background-color: #000;
+  color: #000000;
+  opacity: 1;
+  box-shadow: 0 0 16px 0 #d8d8d8;
+  margin: auto auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: initial;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  flex-direction: row;
+}
+
+.window_widget::after {
+  content: ''; 
+  position: absolute; 
+  left: -20px; 
+  border: 10px solid transparent;	
+  border-right: 10px solid #000;
 }
