@@ -4,10 +4,9 @@ import LinkIcon from './link.svg'
 import LinkIconSelect from './link_select.svg'
 import { ReactComponent as PlucIcon } from './pluc.svg'
 import { ReactComponent as CameraIcon } from './camera.svg'
-import Icon from './pluc.svg'
+import { ReactComponent as YoutubeIcon } from './youtube.svg'
+import { ReactComponent as SoundcloudIcon } from './soundcloud.svg'
 
-
-const ref = React.createRef();
 
 class Editor extends Component {
   constructor() {
@@ -17,9 +16,6 @@ class Editor extends Component {
       linkUrl: '',
       showInput: false,
       popOverPosition: {},
-      paragraphs: [
-        {type: "html", index: 0, data: [], params: {style: ""}}
-      ],
       selectedTag: null,
       hoverLink: null,
       showHoverLink: null,
@@ -29,30 +25,20 @@ class Editor extends Component {
       popOverPositionWidgets: {},
       indexParagraph: null,
       showWidgetsPopUp: false,
+      currentDomNode: null
     }
   }
 
   componentDidMount() {
-    // const data = [{data:"dfkjgh dkfgjdklfgj dg <i>df<b>gsdfg</b></i>",type:"heading",params:{size:"h1"}},
-    //               {"data":"dfg dgdf gdg<a href=\"http://dfdf\">fsd</a>&nbsp;ddfgdfgdfgdgdfg&nbsp;","type":"html"},
-    //               {"data":"f gdfg dfg dg df","type":"html"},
-    //               {"data":"s dfg sdfgs dfgs d","type":"html"},
-    //               {"data":"g dsfg dfgjk hdfkjg hsdfgkjs","type":"heading","params":{"size":"h2"}}]
-    // // const jsonParse = JSON.parse(data)
-    // console.log('jsonParse', data)
-    // this.setState({
-    //   paragraphs: data
-    // })
   }
 
   SelectionText = e => {
     if (window.getSelection().toString() !== '') {
       this.handleOpen()
       const selectedText = window.getSelection()
-      const leftOffset = e.clientX - this.option.offsetParent.offsetLeft
       const topOffset = e.clientY - this.option.offsetParent.offsetTop
+      const leftOffset = e.clientX 
       this.setPositionOfPopOver(topOffset, leftOffset)
-      console.log('selectedText', selectedText)
 
       if(selectedText){
         const parentElement = selectedText.anchorNode.parentElement.localName
@@ -71,7 +57,6 @@ class Editor extends Component {
 
 
   handleChangeStyle = (e, value) => {
-    console.log('value', value)
     const { selectedTag } = this.state
     switch (value) {
       case "h1": {
@@ -186,76 +171,47 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
-    const {indexParagraph} = this.state
-    let content = this.option.childNodes
-    content = Array.prototype.slice.call(content)
-    content.shift()
-    // console.log('content', content)
-    content.map((el, index) => {
-      if (indexParagraph === index){
-        // console.log('el', el)
-        if(el.innerText !== ''){
-          this.setState({
-            isShowPlucButton: false
-          })
-        }
+    const selectedText = window.getSelection()
+    if(selectedText.anchorNode.nodeValue) {
+      this.setState({ isShowPlucButton: false })
+    } else {
+      this.setState({ isShowPlucButton: true })
+    }
+    this.setState({
+      currentDomNode: selectedText.anchorNode,
+      showPlucButtonPosition: selectedText.anchorNode.offsetTop,
+      popOverPositionWidgets: {
+        top: selectedText.anchorNode.offsetTop,
+        // left: event.clientX
       }
     })
-
-
-
     if(event.keyCode === 8) {
+      const selectedText = window.getSelection()
       if (this.option.childNodes.length === 0) {
-        const img = document.createElement('img')
-        img.src = Icon
-        img.className='article_showWidgets'
-        img.onclick = this.showWidgets
-        img.style = `top: ${this.state.showPlucButtonPosition}px`
-        this.option.appendChild( img )
         const basicElement = document.createElement('p')
         basicElement.className = 'paragraph_editor'
         this.option.appendChild( basicElement )
       }
-      // let content = this.option.childNodes
-      // const index =  event.target.childElementCount -2
-      // content = Array.prototype.slice.call(content)
-      // content.shift()
-      // console.log('content', content)    
-      // const topPositionBtn = content[index].offsetTop
-      // this.setState({
-      //   showPlucButtonPosition: topPositionBtn
-      // })
     }
     if(event.keyCode === 13) {
-      const lastIndex = this.state.paragraphs.indexOf(this.state.paragraphs[this.state.paragraphs.length - 1])
-      // const index =  event.target.childElementCount -2
-      this.setState(prev => ({
-        paragraphs: [...prev.paragraphs, 
-          {type: "html", index: lastIndex + 1, data: [], params: {style: ""}}
-        ],
-        // indexParagraph: index
-      }), () => this.createNode())
+      document.execCommand('defaultParagraphSeparator', false, 'p')
+      this.createNode()
     }
   }
 
 
   createNode = () => {
-    const { indexParagraph } = this.state
     const sel= window.getSelection()
     const node = sel.anchorNode
-    node.remove()
-    let content = this.option.childNodes
-    content = Array.prototype.slice.call(content)
-    content.shift()
-    const topPositionBtn = content[indexParagraph].offsetTop
-    this.setState({
-      showPlucButtonPosition: topPositionBtn
-    })
+    console.log('node', sel)
+    if(node.localName === 'b' || node.localName === 'i' || node.localName === 'strike') {
+      console.log('enter in b, i , strike')
+      node.remove()
+    }
   }
 
   save = () => {
     const data = []
-    console.log('state', this.state.paragraphs)
     let content = this.option.childNodes
     content = Array.prototype.slice.call(content)
     console.log('content', content)
@@ -301,90 +257,136 @@ class Editor extends Component {
   }
 
   handleCloseInput = () => {
-    this.setState({  showInput: false })
+    this.setState({ showInput: false })
   }
 
-  showWidgets = () => {
-    this.setState({
-      showWidgetsPopUp: true
-    })
-    console.log('showWidgets')
+  showWidgets = (e) => {
+    e.stopPropagation()
+    this.setState({ showWidgetsPopUp: true })
   }
 
   handleCloseWidgets = () => {
-    this.setState({
-      showWidgetsPopUp: false
-    })
+    this.setState({ showWidgetsPopUp: false })
   }
 
-  showPlucButton = (e,index) => {
+  showPlucButton = (e) => {
     const selectedText = window.getSelection()
     const topPositionBtn = selectedText.anchorNode.offsetTop
-    const topPositionWidgetPopOver = e.clientY - selectedText.anchorNode.offsetTop
-    // console.log('postiosn',selectedText)
-    // console.log('topPositionWidgetPopOver',topPositionWidgetPopOver)
-    // console.log('options', this.option.offsetParent.offsetLeft)
-    // console.log('options', this.option.offsetParent.offsetTop)
-    // console.log('e', e.clientX)
-    // console.log('e', e.clientY)
     this.setState({
+      currentDomNode: selectedText.anchorNode,
       isShowPlucButton: true,
       showPlucButtonPosition: topPositionBtn,
-      indexParagraph: index,
       popOverPositionWidgets: {
-        top:  topPositionWidgetPopOver,
+        top: e.clientY,
         left: e.clientX
       }
     })
+    if(selectedText.anchorNode.nodeValue) {
+      this.setState({ isShowPlucButton: false })
+    } else {
+      this.setState({ isShowPlucButton: true })
+    }
   }
 
   addPicture = () => {
-    const {indexParagraph} = this.state
+    const {currentDomNode} = this.state
     this.setState({
       showWidgetsPopUp: false
     })
-    let content = this.option.childNodes
-    content = Array.prototype.slice.call(content)
-    content.shift()
-    content.map((el, index) => {
-      if (indexParagraph === index){
-        const div = document.createElement("div")
-        div.className = 'paragraph_add_picture'
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.onchange = this.handleAddImage
-        input.className = 'inputText'
-        const parent = el.parentNode     
-        parent.replaceChild(div, el)
-        div.appendChild(input)
-      }
-    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_picture'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = this.handleAddImage
+    input.className = 'inputText'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
   }
 
   handleAddImage = (event) => {
-    let content = this.option.childNodes
     const file = URL.createObjectURL(event.target.files[0])
     const img = document.createElement("img")
     img.src = file
-    const newDiv = document.createElement("p")
+    const newDiv = document.createElement("div")
     newDiv.className = 'paragraph_picture'
     newDiv.contentEditable='false'
     const div = event.target.parentNode
     const parent = div.parentNode
-
     parent.replaceChild(newDiv, div)
     newDiv.appendChild(img)
-    console.log('target', content)
-    console.log('event', event.target.parentNode)
-    console.log('div', div)
-    
-    this.setState(prev => ({
-      paragraphs: [...prev.paragraphs, 
-        {type: "html", data: [], params: {style: ""}}
-      ]
-    }))
   }
 
+  addInputYoutube = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_youtube'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedYoutube
+    input.className = 'paragraph_input_add_youtube'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedYoutube = e => {
+    const url = e.target.value
+    let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    let match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      let iframe = document.createElement('iframe')
+      iframe.src = `//www.youtube.com/embed/${match[2]}`
+      iframe.width = '100%'
+      iframe.height = '300px'
+      iframe.setAttribute('allowFullScreen', '')
+      const newDiv = document.createElement("div")
+      newDiv.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(newDiv, div)
+      newDiv.appendChild(iframe)
+    } else {
+        return 'error';
+    }
+  }
+
+  addSoundcloudYoutube = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_soundcloud'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedSoundcloud
+    input.className = 'paragraph_input_add_soundcloud'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedSoundcloud = (e) => {
+      const url = e.target.value
+      let iframe = document.createElement('iframe')
+      iframe.src = `https://w.soundcloud.com/player/?url=${url}`
+      iframe.width = '100%'
+      iframe.height = '200px'
+      iframe.setAttribute('allowFullScreen', '')
+      const newDiv = document.createElement("div")
+      newDiv.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(newDiv, div)
+      newDiv.appendChild(iframe)
+  }
 
   render() {
     const { 
@@ -402,37 +404,29 @@ class Editor extends Component {
 
     return (
       <Fragment>
-      <div 
-        ref={node => (this.option = node)}
-        className='article_editor paraf'
-        contentEditable 
-        onMouseUp={this.SelectionText}
-        onMouseOver={this.mouseOver}
-        onMouseOut={this.mouseOut}
-        onKeyUp={this.setParagraph}
-        id='editor'
-        suppressContentEditableWarning={true}
-      >
-      {isShowPlucButton && 
-        <PlucIcon 
-          style={{top: `${showPlucButtonPosition}px`}}  
-          className='article_showWidgets' 
-          onClick={this.showWidgets}
-        />
-      }
-        {this.state.paragraphs.map(({type, data, params}, index) => {
-          return <Paragraph 
-                      showPlucButton={this.showPlucButton} 
-                      showWidgets={this.showWidgets}
-                      data={data} 
-                      params={params} 
-                      type={type} 
-                      key={index} 
-                      index={index} 
-                      ref={ref}
-                      showPlucButtonPosition={showPlucButtonPosition}
-                      />
-        })}
+        <div className='article_editor_wrapper'>
+        {isShowPlucButton && 
+          <PlucIcon 
+            style={{top: `${showPlucButtonPosition}px`}}  
+            className='article_showWidgets' 
+            onClick={this.showWidgets}
+          />
+        }  
+        <div 
+          ref={node => (this.option = node)}
+          className='article_editor paraf'
+          contentEditable 
+          onMouseUp={this.SelectionText}
+          onMouseOver={this.mouseOver}
+          onMouseOut={this.mouseOut}
+          onKeyUp={this.setParagraph}
+          id='editor'
+          suppressContentEditableWarning={true}
+          onClick={this.showPlucButton}
+        >
+        <p className='paragraph_editor'></p>
+
+        </div>
       </div>
       <button onClick={this.save} >save</button>
         {showPopUp &&
@@ -458,22 +452,13 @@ class Editor extends Component {
             handleCloseWidgets={this.handleCloseWidgets}
             addPicture={this.addPicture}
             popOverPositionWidgets={popOverPositionWidgets}
+            addInputYoutube={this.addInputYoutube}
+            addSoundcloudYoutube={this.addSoundcloudYoutube}
           />}
       </Fragment>
     );
   }
 }
-
-const Paragraph = React.forwardRef(({index, data, type, params, showPlucButton}, ref) => (
-    <p 
-      onClick={(e) => showPlucButton(e, index)} 
-      index={index} 
-      ref={ref} 
-      type={type} 
-      // params={params} 
-      className='paragraph_editor'>{data}</p>
-))
-
 
 class Popup extends Component {
   render() {
@@ -482,7 +467,7 @@ class Popup extends Component {
       <div className='wrapper'>
         <div className='background' onClick={handleClose}>
           <div className='window' 
-            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
+            style={{top: `${popOverPosition.top-20}px`, left: `${popOverPosition.left-110}px` }}
             onClick={e => e.stopPropagation()}>
             {showInput ? 
               <Fragment>
@@ -534,14 +519,16 @@ class PopupHoverLink extends Component {
 
 class PopupWidgets extends Component {
   render() {
-    const { handleCloseWidgets, addPicture, popOverPositionWidgets } = this.props
+    const { handleCloseWidgets, addPicture, popOverPositionWidgets, addInputYoutube, addSoundcloudYoutube} = this.props
     return (
       <div className='wrapper' >
         <div className='background' onClick={handleCloseWidgets} >
           <div className='window_widget' 
-            style={{top: `${popOverPositionWidgets.top - 25}px`, left: `${popOverPositionWidgets.left}px` }}
+            style={{top: `${popOverPositionWidgets.top}px`, left: '36%' }}
             onClick={e => e.stopPropagation()}>
               <CameraIcon onClick={addPicture}  style={{fill: '#fff'}} className='button' />
+              <YoutubeIcon onClick={addInputYoutube}  className='button' />
+              <SoundcloudIcon onClick={addSoundcloudYoutube} className='button' />
           </div>
         </div>
       </div>

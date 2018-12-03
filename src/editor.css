@@ -1,8 +1,11 @@
-.article_editor{
+.article_editor_wrapper {
   width: 400px;
-  /* height: 28px; */
   outline: none;
   margin: 80px auto;
+  position: relative;
+}
+.article_editor{
+  outline: none;
   background: #E0F2F1;
   padding: 10px;
   border-radius: 5px;
