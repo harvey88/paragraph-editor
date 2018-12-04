@@ -32,7 +32,8 @@
 
 .paragraph_editor:empty::before {
   content: 'Enter your text';
-  color: grey;
+  /* content: ' '; */
+  color: transparent;
   font-size: 12px;
 }
 

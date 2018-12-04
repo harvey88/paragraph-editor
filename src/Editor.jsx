@@ -203,10 +203,19 @@ class Editor extends Component {
   createNode = () => {
     const sel= window.getSelection()
     const node = sel.anchorNode
-    console.log('node', sel)
+    console.log('sel', sel)
+    console.log('node', node)
     if(node.localName === 'b' || node.localName === 'i' || node.localName === 'strike') {
       console.log('enter in b, i , strike')
       node.remove()
+    }
+    if(node.localName === 'div'){
+      const newP = document.createElement('p')
+      newP.className = 'paragraph_editor'
+      const parent = node.parentNode
+      parent.replaceChild(newP, node)
+    } else {
+      node.className = 'paragraph_editor'
     }
   }
 
