@@ -1,12 +1,13 @@
 import React, { Component, Fragment } from 'react'
 import './editor.css';
-import LinkIcon from './link.svg'
-import LinkIconSelect from './link_select.svg'
-import { ReactComponent as PlucIcon } from './pluc.svg'
-import { ReactComponent as CameraIcon } from './camera.svg'
-import { ReactComponent as YoutubeIcon } from './youtube.svg'
-import { ReactComponent as SoundcloudIcon } from './soundcloud.svg'
-
+import LinkIcon from './svg/link.svg'
+import LinkIconSelect from './svg/link_select.svg'
+import { ReactComponent as PlucIcon } from './svg/pluc.svg'
+import { ReactComponent as CameraIcon } from './svg/camera.svg'
+import { ReactComponent as YoutubeIcon } from './svg/youtube.svg'
+import { ReactComponent as SoundcloudIcon } from './svg/soundcloud.svg'
+import { ReactComponent as VimeoIcon } from './svg/vimeo.svg'
+import { ReactComponent as TwitterIcon } from './svg/twitter.svg'
 
 class Editor extends Component {
   constructor() {
@@ -63,11 +64,13 @@ class Editor extends Component {
         if (selectedTag === 'h1') {
           return (
             document.execCommand("formatblock", false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h1>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -76,11 +79,13 @@ class Editor extends Component {
         if (selectedTag === 'h2') {
           return (
             document.execCommand('formatblock', false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h2>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -89,11 +94,13 @@ class Editor extends Component {
         if (selectedTag === 'h3') {
           return (
             document.execCommand('formatblock', false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h3>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -181,16 +188,23 @@ class Editor extends Component {
       currentDomNode: selectedText.anchorNode,
       showPlucButtonPosition: selectedText.anchorNode.offsetTop,
       popOverPositionWidgets: {
-        top: selectedText.anchorNode.offsetTop,
-        // left: event.clientX
+        top: selectedText.anchorNode.offsetTop
       }
     })
     if(event.keyCode === 8) {
-      const selectedText = window.getSelection()
       if (this.option.childNodes.length === 0) {
         const basicElement = document.createElement('p')
         basicElement.className = 'paragraph_editor'
         this.option.appendChild( basicElement )
+        if(basicElement) {
+          this.setState({
+            currentDomNode: selectedText.anchorNode.firstChild,
+            showPlucButtonPosition: selectedText.anchorNode.firstChild.offsetTop,
+            popOverPositionWidgets: {
+              top: selectedText.anchorNode.firstChild.offsetTop
+            }
+          })
+        }
       }
     }
     if(event.keyCode === 13) {
@@ -203,13 +217,11 @@ class Editor extends Component {
   createNode = () => {
     const sel= window.getSelection()
     const node = sel.anchorNode
-    console.log('sel', sel)
-    console.log('node', node)
     if(node.localName === 'b' || node.localName === 'i' || node.localName === 'strike') {
       console.log('enter in b, i , strike')
       node.remove()
     }
-    if(node.localName === 'div'){
+    if(node.localName === 'div' || node.localName === 'blockquote'){
       const newP = document.createElement('p')
       newP.className = 'paragraph_editor'
       const parent = node.parentNode
@@ -217,6 +229,9 @@ class Editor extends Component {
     } else {
       node.className = 'paragraph_editor'
     }
+    this.setState({
+      currentDomNode: sel.anchorNode
+    })
   }
 
   save = () => {
@@ -286,8 +301,7 @@ class Editor extends Component {
       isShowPlucButton: true,
       showPlucButtonPosition: topPositionBtn,
       popOverPositionWidgets: {
-        top: e.clientY,
-        left: e.clientX
+        top: topPositionBtn
       }
     })
     if(selectedText.anchorNode.nodeValue) {
@@ -300,7 +314,8 @@ class Editor extends Component {
   addPicture = () => {
     const {currentDomNode} = this.state
     this.setState({
-      showWidgetsPopUp: false
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
     })
     const div = document.createElement("div")
     div.className = 'paragraph_add_picture'
@@ -330,7 +345,8 @@ class Editor extends Component {
   addInputYoutube = () => {
     const {currentDomNode} = this.state
     this.setState({
-      showWidgetsPopUp: false
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
     })
     const div = document.createElement("div")
     div.className = 'paragraph_add_youtube'
@@ -339,6 +355,7 @@ class Editor extends Component {
     input.type = 'text'
     input.onchange = this.embedYoutube
     input.className = 'paragraph_input_add_youtube'
+    input.placeholder = 'Add link to youtube'
     const parent = currentDomNode.parentNode     
     parent.insertBefore(div, currentDomNode)
     div.appendChild(input)
@@ -365,10 +382,11 @@ class Editor extends Component {
     }
   }
 
-  addSoundcloudYoutube = () => {
+  addSoundcloud = () => {
     const {currentDomNode} = this.state
     this.setState({
-      showWidgetsPopUp: false
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
     })
     const div = document.createElement("div")
     div.className = 'paragraph_add_soundcloud'
@@ -377,6 +395,7 @@ class Editor extends Component {
     input.type = 'text'
     input.onchange = this.embedSoundcloud
     input.className = 'paragraph_input_add_soundcloud'
+    input.placeholder = 'Add link to soundcloud'
     const parent = currentDomNode.parentNode     
     parent.insertBefore(div, currentDomNode)
     div.appendChild(input)
@@ -395,6 +414,89 @@ class Editor extends Component {
       const parent = div.parentNode
       parent.replaceChild(newDiv, div)
       newDiv.appendChild(iframe)
+  }
+
+  addVimeo = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_vimeo'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedVimeo
+    input.className = 'paragraph_input_add_vimeo'
+    input.placeholder = 'Add link to Vimeo'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedVimeo = (e) => {
+    const url = e.target.value
+    let regExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
+    let match = url.match(regExp)
+    let iframe = document.createElement('iframe')
+    iframe.src = `//player.vimeo.com/video/${match[1]}`
+    iframe.width = '100%'
+    iframe.height = '215px'
+    iframe.setAttribute('allowFullScreen', '')
+    const newDiv = document.createElement("div")
+    newDiv.contentEditable='false'
+    const div = e.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(newDiv, div)
+    newDiv.appendChild(iframe)
+  }
+
+  addTwitter = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_twitter'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedTwitter
+    input.className = 'paragraph_input_add_twitter'
+    input.placeholder = 'Add link to twitter'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+    const script = document.createElement("script")
+    script.src = "https://platform.twitter.com/widgets.js"
+    script.async = true
+    document.body.appendChild(script)
+  }
+
+  embedTwitter = (e) => {
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const url = e.target.value
+    const regExp = /status\/(.*)/
+    const match = url.match(regExp)
+    const blockquote = document.createElement("div")
+    blockquote.className = 'twitter-tweet'
+    blockquote.contentEditable='false'
+    const div = e.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(blockquote, div)
+    window.twttr.widgets.createTweet(
+      match[1], blockquote, 
+      {
+        conversation : 'none',    // or all
+        cards        : 'visible',  // or visible 
+        linkColor    : '#cc0000', // default is blue
+        theme        : 'light'    // or dark
+      })
   }
 
   render() {
@@ -434,7 +536,6 @@ class Editor extends Component {
           onClick={this.showPlucButton}
         >
         <p className='paragraph_editor'></p>
-
         </div>
       </div>
       <button onClick={this.save} >save</button>
@@ -462,7 +563,9 @@ class Editor extends Component {
             addPicture={this.addPicture}
             popOverPositionWidgets={popOverPositionWidgets}
             addInputYoutube={this.addInputYoutube}
-            addSoundcloudYoutube={this.addSoundcloudYoutube}
+            addSoundcloud={this.addSoundcloud}
+            addVimeo={this.addVimeo}
+            addTwitter={this.addTwitter}
           />}
       </Fragment>
     );
@@ -528,16 +631,18 @@ class PopupHoverLink extends Component {
 
 class PopupWidgets extends Component {
   render() {
-    const { handleCloseWidgets, addPicture, popOverPositionWidgets, addInputYoutube, addSoundcloudYoutube} = this.props
+    const { handleCloseWidgets, addPicture, popOverPositionWidgets, addInputYoutube, addSoundcloud, addVimeo, addTwitter} = this.props
     return (
       <div className='wrapper' >
         <div className='background' onClick={handleCloseWidgets} >
           <div className='window_widget' 
-            style={{top: `${popOverPositionWidgets.top}px`, left: '36%' }}
+            style={{top: `${popOverPositionWidgets.top+41}px`, left: '36%' }}
             onClick={e => e.stopPropagation()}>
               <CameraIcon onClick={addPicture}  style={{fill: '#fff'}} className='button' />
               <YoutubeIcon onClick={addInputYoutube}  className='button' />
-              <SoundcloudIcon onClick={addSoundcloudYoutube} className='button' />
+              <SoundcloudIcon onClick={addSoundcloud} style={{fill: '#ff7700'}} className='button' />
+              <VimeoIcon onClick={addVimeo} style={{fill: '#4EBBFF'}} className='button' />
+              <TwitterIcon onClick={addTwitter} style={{fill: '#38A1F3'}} className='button' />
           </div>
         </div>
       </div>

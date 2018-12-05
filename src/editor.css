@@ -149,7 +149,7 @@ blockquote {
 
 .window_widget {
   position: absolute;
-  width: 150px;
+  width: 220px;
   height: 0px;
   padding: 20px 0px;
   border-radius: 10px;
@@ -175,4 +175,19 @@ blockquote {
   left: -20px; 
   border: 10px solid transparent;	
   border-right: 10px solid #000;
+}
+
+.paragraph_add_twitter,
+.paragraph_add_vimeo,
+.paragraph_add_soundcloud,
+.paragraph_add_youtube{
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.paragraph_input_add_soundcloud,
+.paragraph_input_add_youtube,
+.paragraph_input_add_vimeo,
+.paragraph_input_add_twitter {
+  width: 100%;
 }
