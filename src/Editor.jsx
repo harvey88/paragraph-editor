@@ -27,7 +27,8 @@ class Editor extends Component {
       popOverPositionWidgets: {},
       indexParagraph: null,
       showWidgetsPopUp: false,
-      currentDomNode: null
+      currentDomNode: null,
+      countInputID: 1
     }
   }
 
@@ -102,6 +103,7 @@ class Editor extends Component {
   }
 
   SelectionText = e => {
+
     if (window.getSelection().toString() !== '') {
       this.handleOpen()
       const selectedText = window.getSelection()
@@ -276,7 +278,8 @@ class Editor extends Component {
       }
     }
     if(event.keyCode === 13) {
-      document.execCommand('defaultParagraphSeparator', false, 'p')
+      // console.log('enter on div')
+      // document.execCommand('defaultParagraphSeparator', false, 'p')
       this.createNode()
     }
   }
@@ -412,20 +415,29 @@ class Editor extends Component {
 
   addPicture = () => {
     const {currentDomNode} = this.state
-    this.setState({
+    this.setState((prev) => ({
       showWidgetsPopUp: false,
-      isShowPlucButton: false
-    })
+      isShowPlucButton: false,
+      countInputID: prev.countInputID + 1
+    }))
     const div = document.createElement("div")
     div.className = 'paragraph_add_picture'
     div.contentEditable='false'
+
     const input = document.createElement('input')
+    input.id = `index-${this.state.countInputID}`
     input.type = 'file'
     input.onchange = this.handleAddImage
-    input.className = 'inputText'
+    input.className = 'input_paragraph_picture'
+
+    const label = document.createElement('label')
+    label.htmlFor = `index-${this.state.countInputID}`
+    label.textContent = 'Upload img'
+    label.className = 'label_paragraph_picture'
     const parent = currentDomNode.parentNode     
     parent.insertBefore(div, currentDomNode)
     div.appendChild(input)
+    div.appendChild(label)
   }
 
   handleAddImage = (event) => {
@@ -453,6 +465,8 @@ class Editor extends Component {
     const input = document.createElement('input')
     input.type = 'text'
     input.onchange = this.embedYoutube
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
     input.className = 'paragraph_input_add_youtube'
     input.placeholder = 'Add link to youtube'
     const parent = currentDomNode.parentNode     
@@ -460,7 +474,23 @@ class Editor extends Component {
     div.appendChild(input)
   }
 
+  closePlucButton = (e) => {
+    e.stopPropagation()
+    this.setState({
+      isShowPlucButton: false
+    })
+  }
+
+  closePopUpEdit = (e) => {
+    e.stopPropagation()
+    this.setState({
+      isShowPlucButton: false,
+      showPopUp: false
+    })
+  }
+
   embedYoutube = e => {
+    e.stopPropagation()
     this.setState({
       isShowPlucButton: false
     })
@@ -481,7 +511,12 @@ class Editor extends Component {
       parent.replaceChild(newDiv, div)
       newDiv.appendChild(iframe)
     } else {
-        return 'error';
+      // const selectedText = window.getSelection()
+      // this.setState({
+      //   currentDomNode: selectedText.anchorNode.firstChild
+      // }, console.log('currentDomNode', selectedText))
+      // this.addInputYoutube()
+      console.log('bad link youtube')
     }
   }
 
@@ -497,6 +532,8 @@ class Editor extends Component {
     const input = document.createElement('input')
     input.type = 'text'
     input.onchange = this.embedSoundcloud
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
     input.className = 'paragraph_input_add_soundcloud'
     input.placeholder = 'Add link to soundcloud'
     const parent = currentDomNode.parentNode     
@@ -535,6 +572,8 @@ class Editor extends Component {
     const input = document.createElement('input')
     input.type = 'text'
     input.onchange = this.embedVimeo
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
     input.className = 'paragraph_input_add_vimeo'
     input.placeholder = 'Add link to Vimeo'
     const parent = currentDomNode.parentNode     
@@ -549,7 +588,8 @@ class Editor extends Component {
     const url = e.target.value
     let regExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
     let match = url.match(regExp)
-    let iframe = document.createElement('iframe')
+    if(match && match[1]) {
+      let iframe = document.createElement('iframe')
     iframe.src = `//player.vimeo.com/video/${match[1]}`
     iframe.width = '100%'
     iframe.height = '215px'
@@ -561,6 +601,11 @@ class Editor extends Component {
     const parent = div.parentNode
     parent.replaceChild(newDiv, div)
     newDiv.appendChild(iframe)
+    } else {
+      console.log('bad link vimeo')
+      return 'error'
+    }
+    
   }
 
   addTwitter = () => {
@@ -575,6 +620,8 @@ class Editor extends Component {
     const input = document.createElement('input')
     input.type = 'text'
     input.onchange = this.embedTwitter
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
     input.className = 'paragraph_input_add_twitter'
     input.placeholder = 'Add link to twitter'
     const parent = currentDomNode.parentNode     
@@ -594,20 +641,25 @@ class Editor extends Component {
     const url = e.target.value
     const regExp = /status\/(.*)/
     const match = url.match(regExp)
-    const blockquote = document.createElement("div")
-    blockquote.className = 'twitter-tweet'
-    blockquote.contentEditable='false'
-    const div = e.target.parentNode
-    const parent = div.parentNode
-    parent.replaceChild(blockquote, div)
-    window.twttr.widgets.createTweet(
-      match[1], blockquote, 
-      {
-        conversation : 'none',    // or all
-        cards        : 'visible',  // or visible 
-        linkColor    : '#cc0000', // default is blue
-        theme        : 'light'    // or dark
-      })
+    if (match && match[1]) {
+      const blockquote = document.createElement("div")
+      blockquote.className = 'twitter-tweet'
+      blockquote.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(blockquote, div)
+      window.twttr.widgets.createTweet(
+        match[1], blockquote, 
+        {
+          conversation : 'none',    // or all
+          cards        : 'visible',  // or visible 
+          linkColor    : '#cc0000', // default is blue
+          theme        : 'light'    // or dark
+        })
+    } else {
+      console.log('bad link twitter')
+      return null
+    }
   }
 
   render() {
