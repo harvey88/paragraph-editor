@@ -8,6 +8,7 @@ import { ReactComponent as YoutubeIcon } from './svg/youtube.svg'
 import { ReactComponent as SoundcloudIcon } from './svg/soundcloud.svg'
 import { ReactComponent as VimeoIcon } from './svg/vimeo.svg'
 import { ReactComponent as TwitterIcon } from './svg/twitter.svg'
+import json from './data.json'
 
 class Editor extends Component {
   constructor() {
@@ -31,6 +32,73 @@ class Editor extends Component {
   }
 
   componentDidMount() {
+    let json
+    const data = json
+    var firstChild = document.getElementById('editor').getElementsByTagName('p')[0]
+    if(typeof data !== 'undefined') {
+      data.map(el => {
+      switch(el.type) {
+        case 'heading': {
+          const heading = document.createElement(el.params.size)
+          heading.innerHTML = el.data
+          heading.className = 'paragraph_editor_heading'
+          return this.option.insertBefore(heading, firstChild) 
+        }
+        case 'html': {
+          const p = document.createElement('p')
+          p.innerHTML = el.data
+          p.className = 'paragraph_editor'          
+          return this.option.insertBefore(p, firstChild) 
+        }
+        case 'youtube': {
+          const div = document.createElement('div')
+          div.className = 'paragraph_youtube'
+          const iframe = document.createElement('iframe')
+          iframe.src = el.data
+          iframe.width = '100%'
+          div.appendChild(iframe)
+          return this.option.insertBefore(div, firstChild) 
+        }
+        case 'soundcloud': {
+          const div = document.createElement('div')
+          div.className = 'paragraph_soundcloud'
+          const iframe = document.createElement('iframe')
+          iframe.src = el.data
+          iframe.width = '100%'
+          div.appendChild(iframe)
+          return this.option.insertBefore(div, firstChild) 
+        }
+        case 'vimeo': {
+          const div = document.createElement('div')
+          div.className = 'paragraph_vimeo'
+          const iframe = document.createElement('iframe')
+          iframe.src = el.data
+          iframe.width = '100%'
+          iframe.height = '215px'
+          div.appendChild(iframe)
+          return this.option.insertBefore(div, firstChild) 
+        }
+        case 'img': {
+          const div = document.createElement('div')
+          div.className = 'paragraph_picture'
+          const img = document.createElement('img')
+          img.src = el.data
+          div.appendChild(img)
+          return this.option.insertBefore(div, firstChild) 
+        }
+        case 'twitter': {
+          const blockquote = document.createElement('blockquote')
+          blockquote.className = 'twitter-tweet'
+          const a = document.createElement('a')
+          a.href ='https://twitter.com/JavaScriptDaily/status/1070543103650656256'
+          blockquote.appendChild(a)
+          return this.option.insertBefore(blockquote, firstChild) 
+        }
+        default:
+          return null
+      }
+    })
+    } else return
   }
 
   SelectionText = e => {
@@ -253,7 +321,38 @@ class Editor extends Component {
             default:
               return data.push({data: dataHTML, type:'text' })
           }
-        }     
+        }    
+      } else {
+        switch(el.className) {
+          case 'paragraph_picture': {
+            if(el.lastChild.localName === 'img'){
+              return data.push({data: el.lastChild.src, type:'img'})
+            }
+            else return
+          }
+          case 'paragraph_youtube': {
+            if(el.lastChild.localName === 'iframe'){
+              return data.push({data: el.lastChild.src, type:'youtube'})
+            } else return
+          }
+          case 'paragraph_soundcloud': {
+            if(el.lastChild.localName === 'iframe'){
+              return data.push({data: el.lastChild.src, type:'soundcloud'})
+            } else return
+          }
+          case 'paragraph_vimeo': {
+            if(el.lastChild.localName === 'iframe'){
+              return data.push({data: el.lastChild.src, type:'vimeo'})
+            } else return
+          }
+          case 'twitter-tweet': {
+            if(el.lastChild.dataset){
+              return data.push({data: el.lastChild.dataset.tweetId, type:'twitter'})
+            } else return
+          }
+          default:
+            return null
+        } 
       }
     })
     const json = JSON.stringify(data)
@@ -362,6 +461,9 @@ class Editor extends Component {
   }
 
   embedYoutube = e => {
+    this.setState({
+      isShowPlucButton: false
+    })
     const url = e.target.value
     let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     let match = url.match(regExp);
@@ -372,6 +474,7 @@ class Editor extends Component {
       iframe.height = '300px'
       iframe.setAttribute('allowFullScreen', '')
       const newDiv = document.createElement("div")
+      newDiv.className = 'paragraph_youtube'
       newDiv.contentEditable='false'
       const div = e.target.parentNode
       const parent = div.parentNode
@@ -402,6 +505,9 @@ class Editor extends Component {
   }
 
   embedSoundcloud = (e) => {
+      this.setState({
+        isShowPlucButton: false
+      })
       const url = e.target.value
       let iframe = document.createElement('iframe')
       iframe.src = `https://w.soundcloud.com/player/?url=${url}`
@@ -409,6 +515,7 @@ class Editor extends Component {
       iframe.height = '200px'
       iframe.setAttribute('allowFullScreen', '')
       const newDiv = document.createElement("div")
+      newDiv.className = 'paragraph_soundcloud'
       newDiv.contentEditable='false'
       const div = e.target.parentNode
       const parent = div.parentNode
@@ -436,6 +543,9 @@ class Editor extends Component {
   }
 
   embedVimeo = (e) => {
+    this.setState({
+      isShowPlucButton: false
+    })
     const url = e.target.value
     let regExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
     let match = url.match(regExp)
@@ -445,6 +555,7 @@ class Editor extends Component {
     iframe.height = '215px'
     iframe.setAttribute('allowFullScreen', '')
     const newDiv = document.createElement("div")
+    newDiv.className = 'paragraph_vimeo'
     newDiv.contentEditable='false'
     const div = e.target.parentNode
     const parent = div.parentNode
@@ -469,10 +580,10 @@ class Editor extends Component {
     const parent = currentDomNode.parentNode     
     parent.insertBefore(div, currentDomNode)
     div.appendChild(input)
-    const script = document.createElement("script")
-    script.src = "https://platform.twitter.com/widgets.js"
-    script.async = true
-    document.body.appendChild(script)
+    // const script = document.createElement("script")
+    // script.src = "https://platform.twitter.com/widgets.js"
+    // script.async = true
+    // document.body.appendChild(script)
   }
 
   embedTwitter = (e) => {
