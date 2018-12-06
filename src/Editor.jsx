@@ -1,8 +1,13 @@
 import React, { Component, Fragment } from 'react'
 import './editor.css';
-import LinkIcon from './link.svg'
-
-const ref = React.createRef();
+import LinkIcon from './svg/link.svg'
+import LinkIconSelect from './svg/link_select.svg'
+import { ReactComponent as PlucIcon } from './svg/pluc.svg'
+import { ReactComponent as CameraIcon } from './svg/camera.svg'
+import { ReactComponent as YoutubeIcon } from './svg/youtube.svg'
+import { ReactComponent as SoundcloudIcon } from './svg/soundcloud.svg'
+import { ReactComponent as VimeoIcon } from './svg/vimeo.svg'
+import { ReactComponent as TwitterIcon } from './svg/twitter.svg'
 
 class Editor extends Component {
   constructor() {
@@ -12,13 +17,16 @@ class Editor extends Component {
       linkUrl: '',
       showInput: false,
       popOverPosition: {},
-      paragraphs: [
-        {type: "html", data: [], params: {style: ""}}
-      ],
       selectedTag: null,
       hoverLink: null,
       showHoverLink: null,
-      popOverPositionLink: {}
+      isShowPlucButton: false,
+      popOverPositionLink: {},
+      showPlucButtonPosition: {},
+      popOverPositionWidgets: {},
+      indexParagraph: null,
+      showWidgetsPopUp: false,
+      currentDomNode: null
     }
   }
 
@@ -29,8 +37,8 @@ class Editor extends Component {
     if (window.getSelection().toString() !== '') {
       this.handleOpen()
       const selectedText = window.getSelection()
-      const leftOffset = e.clientX - this.option.offsetParent.offsetLeft
       const topOffset = e.clientY - this.option.offsetParent.offsetTop
+      const leftOffset = e.clientX 
       this.setPositionOfPopOver(topOffset, leftOffset)
 
       if(selectedText){
@@ -39,6 +47,7 @@ class Editor extends Component {
           case 'h1': return this.setState({ selectedTag: parentElement })
           case 'h2': return this.setState({ selectedTag: parentElement })
           case 'h3': return this.setState({ selectedTag: parentElement })
+          case 'a': return this.setState({ selectedTag: parentElement })
           default:
             return this.setState({ selectedTag: parentElement })
         }  
@@ -49,18 +58,19 @@ class Editor extends Component {
 
 
   handleChangeStyle = (e, value) => {
-    console.log('value', value)
     const { selectedTag } = this.state
     switch (value) {
       case "h1": {
         if (selectedTag === 'h1') {
           return (
             document.execCommand("formatblock", false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h1>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -69,11 +79,13 @@ class Editor extends Component {
         if (selectedTag === 'h2') {
           return (
             document.execCommand('formatblock', false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h2>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -82,11 +94,13 @@ class Editor extends Component {
         if (selectedTag === 'h3') {
           return (
             document.execCommand('formatblock', false, 'p'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor',
             this.setState({ selectedTag: 'p' })
           ) 
         } else {
           return (
             document.execCommand('formatBlock', false, '<h3>'),
+            window.getSelection().focusNode.parentNode.className = 'paragraph_editor_heading',
             this.setState({ selectedTag: value })
           ) 
         }
@@ -94,10 +108,20 @@ class Editor extends Component {
       case "bold": return document.execCommand('bold', false, null)
       case "italic": return document.execCommand('italic', false, null)
       case "strikethrough": return document.execCommand('strikethrough', false, null)
-      case "createLink": return (
-        this.setState({ showInput: true }),
-        document.execCommand('superscript', null, null)
-      ) 
+      case "createLink": {
+        if (selectedTag === 'a') {
+          console.log('createLink createLink')
+          return (
+            document.execCommand('unlink', false, null),
+            this.setState({ selectedTag: null })
+          ) 
+        } else {
+          return (
+            this.setState({ showInput: true }),
+            document.execCommand('superscript', null, null)
+          ) 
+        }
+      }
       case "blockquote": return document.execCommand('formatBlock', false, '<blockquote>')
       default:
         return null
@@ -106,20 +130,31 @@ class Editor extends Component {
   }
 
   mouseOver = (el) => {
-    // console.log('event.clientX', el.pageX)
-    // console.log('el.clientY', el.pageY)
-    const link = el.target.tagName
-    // console.log('mouseOver', el.target.tagName)    
+    this.setState({
+      popOverPositionLink: {
+        top: el.pageY,
+        left: el.pageX
+      }
+    })
+    const link = el.target.tagName  
     if (link === 'A'){
-
       this.setState({
         showHoverLink: link,
         hoverLink: el.target.href
       })
-    } else {
-        this.setState({
-          showHoverLink: null
-        })
+    } 
+  }
+
+  mouseOut = (el) => {
+    const link = el.target.tagName  
+    if (link === 'A'){
+      setTimeout( 
+        () => {
+          this.setState({
+            showHoverLink: null
+          })
+        }, 2000
+      )
     }
   }
 
@@ -143,19 +178,38 @@ class Editor extends Component {
   }
 
   setParagraph = (event) => {
+    const selectedText = window.getSelection()
+    if(selectedText.anchorNode.nodeValue) {
+      this.setState({ isShowPlucButton: false })
+    } else {
+      this.setState({ isShowPlucButton: true })
+    }
+    this.setState({
+      currentDomNode: selectedText.anchorNode,
+      showPlucButtonPosition: selectedText.anchorNode.offsetTop,
+      popOverPositionWidgets: {
+        top: selectedText.anchorNode.offsetTop
+      }
+    })
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
-        let basicElement = document.createElement('p')
+        const basicElement = document.createElement('p')
         basicElement.className = 'paragraph_editor'
         this.option.appendChild( basicElement )
+        if(basicElement) {
+          this.setState({
+            currentDomNode: selectedText.anchorNode.firstChild,
+            showPlucButtonPosition: selectedText.anchorNode.firstChild.offsetTop,
+            popOverPositionWidgets: {
+              top: selectedText.anchorNode.firstChild.offsetTop
+            }
+          })
+        }
       }
     }
     if(event.keyCode === 13) {
-      this.setState(prev => ({
-        paragraphs: [...prev.paragraphs, 
-          {type: "html", data: [], params: {style: ""}}
-        ]
-      }), () => this.createNode())
+      document.execCommand('defaultParagraphSeparator', false, 'p')
+      this.createNode()
     }
   }
 
@@ -163,13 +217,25 @@ class Editor extends Component {
   createNode = () => {
     const sel= window.getSelection()
     const node = sel.anchorNode
-    node.remove()
-
+    if(node.localName === 'b' || node.localName === 'i' || node.localName === 'strike') {
+      console.log('enter in b, i , strike')
+      node.remove()
+    }
+    if(node.localName === 'div' || node.localName === 'blockquote'){
+      const newP = document.createElement('p')
+      newP.className = 'paragraph_editor'
+      const parent = node.parentNode
+      parent.replaceChild(newP, node)
+    } else {
+      node.className = 'paragraph_editor'
+    }
+    this.setState({
+      currentDomNode: sel.anchorNode
+    })
   }
 
   save = () => {
     const data = []
-    console.log('state', this.state.paragraphs)
     let content = this.option.childNodes
     content = Array.prototype.slice.call(content)
     console.log('content', content)
@@ -200,29 +266,277 @@ class Editor extends Component {
     this.setState({ showPopUp: true })
   }
   handleClose = () => {
-    this.setState({ showPopUp: false, showInput: false })
+    this.setState({ showPopUp: false, showInput: false },
+      () => {
+        if(!this.state.showInput){
+          const element = document.getElementById('editor')
+          const link = element.getElementsByTagName('sup')[0]
+          if(link) { 
+            const oldTextLink = link.parentNode
+            while(link.firstChild) oldTextLink.insertBefore(link.firstChild, link)
+            oldTextLink.removeChild(link)
+          }
+        }
+      })
   }
+
   handleCloseInput = () => {
-    this.setState({  showInput: false })
+    this.setState({ showInput: false })
   }
+
+  showWidgets = (e) => {
+    e.stopPropagation()
+    this.setState({ showWidgetsPopUp: true })
+  }
+
+  handleCloseWidgets = () => {
+    this.setState({ showWidgetsPopUp: false })
+  }
+
+  showPlucButton = (e) => {
+    const selectedText = window.getSelection()
+    const topPositionBtn = selectedText.anchorNode.offsetTop
+    this.setState({
+      currentDomNode: selectedText.anchorNode,
+      isShowPlucButton: true,
+      showPlucButtonPosition: topPositionBtn,
+      popOverPositionWidgets: {
+        top: topPositionBtn
+      }
+    })
+    if(selectedText.anchorNode.nodeValue) {
+      this.setState({ isShowPlucButton: false })
+    } else {
+      this.setState({ isShowPlucButton: true })
+    }
+  }
+
+  addPicture = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_picture'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.onchange = this.handleAddImage
+    input.className = 'inputText'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  handleAddImage = (event) => {
+    const file = URL.createObjectURL(event.target.files[0])
+    const img = document.createElement("img")
+    img.src = file
+    const newDiv = document.createElement("div")
+    newDiv.className = 'paragraph_picture'
+    newDiv.contentEditable='false'
+    const div = event.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(newDiv, div)
+    newDiv.appendChild(img)
+  }
+
+  addInputYoutube = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_youtube'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedYoutube
+    input.className = 'paragraph_input_add_youtube'
+    input.placeholder = 'Add link to youtube'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedYoutube = e => {
+    const url = e.target.value
+    let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    let match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      let iframe = document.createElement('iframe')
+      iframe.src = `//www.youtube.com/embed/${match[2]}`
+      iframe.width = '100%'
+      iframe.height = '300px'
+      iframe.setAttribute('allowFullScreen', '')
+      const newDiv = document.createElement("div")
+      newDiv.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(newDiv, div)
+      newDiv.appendChild(iframe)
+    } else {
+        return 'error';
+    }
+  }
+
+  addSoundcloud = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_soundcloud'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedSoundcloud
+    input.className = 'paragraph_input_add_soundcloud'
+    input.placeholder = 'Add link to soundcloud'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedSoundcloud = (e) => {
+      const url = e.target.value
+      let iframe = document.createElement('iframe')
+      iframe.src = `https://w.soundcloud.com/player/?url=${url}`
+      iframe.width = '100%'
+      iframe.height = '200px'
+      iframe.setAttribute('allowFullScreen', '')
+      const newDiv = document.createElement("div")
+      newDiv.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(newDiv, div)
+      newDiv.appendChild(iframe)
+  }
+
+  addVimeo = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_vimeo'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedVimeo
+    input.className = 'paragraph_input_add_vimeo'
+    input.placeholder = 'Add link to Vimeo'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+  }
+
+  embedVimeo = (e) => {
+    const url = e.target.value
+    let regExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
+    let match = url.match(regExp)
+    let iframe = document.createElement('iframe')
+    iframe.src = `//player.vimeo.com/video/${match[1]}`
+    iframe.width = '100%'
+    iframe.height = '215px'
+    iframe.setAttribute('allowFullScreen', '')
+    const newDiv = document.createElement("div")
+    newDiv.contentEditable='false'
+    const div = e.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(newDiv, div)
+    newDiv.appendChild(iframe)
+  }
+
+  addTwitter = () => {
+    const {currentDomNode} = this.state
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const div = document.createElement("div")
+    div.className = 'paragraph_add_twitter'
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedTwitter
+    input.className = 'paragraph_input_add_twitter'
+    input.placeholder = 'Add link to twitter'
+    const parent = currentDomNode.parentNode     
+    parent.insertBefore(div, currentDomNode)
+    div.appendChild(input)
+    const script = document.createElement("script")
+    script.src = "https://platform.twitter.com/widgets.js"
+    script.async = true
+    document.body.appendChild(script)
+  }
+
+  embedTwitter = (e) => {
+    this.setState({
+      showWidgetsPopUp: false,
+      isShowPlucButton: false
+    })
+    const url = e.target.value
+    const regExp = /status\/(.*)/
+    const match = url.match(regExp)
+    const blockquote = document.createElement("div")
+    blockquote.className = 'twitter-tweet'
+    blockquote.contentEditable='false'
+    const div = e.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(blockquote, div)
+    window.twttr.widgets.createTweet(
+      match[1], blockquote, 
+      {
+        conversation : 'none',    // or all
+        cards        : 'visible',  // or visible 
+        linkColor    : '#cc0000', // default is blue
+        theme        : 'light'    // or dark
+      })
+  }
+
   render() {
-    const { showPopUp, showInput, selectedTag, hoverLink, showHoverLink } = this.state
+    const { 
+      showPopUp, 
+      showInput, 
+      selectedTag, 
+      hoverLink, 
+      showHoverLink, 
+      popOverPositionLink,
+      showPlucButtonPosition,
+      isShowPlucButton,
+      showWidgetsPopUp,
+      popOverPositionWidgets
+    } = this.state
+
     return (
       <Fragment>
-      <div 
-        ref={node => (this.option = node)}
-        className='article_editor paraf'
-        contentEditable 
-        onMouseUp={this.SelectionText}
-        onMouseOver={this.mouseOver}
-        onMouseOut={this.mouseOver}
-        onKeyUp={this.setParagraph}
-        id='editor'
-        suppressContentEditableWarning={true}
-      >
-        {this.state.paragraphs.map(({type, data, params}, index) => {
-          return <Paragraph ref={ref} key={index} index={index} />
-        })}
+        <div className='article_editor_wrapper'>
+        {isShowPlucButton && 
+          <PlucIcon 
+            style={{top: `${showPlucButtonPosition}px`}}  
+            className='article_showWidgets' 
+            onClick={this.showWidgets}
+          />
+        }  
+        <div 
+          ref={node => (this.option = node)}
+          className='article_editor paraf'
+          contentEditable 
+          onMouseUp={this.SelectionText}
+          onMouseOver={this.mouseOver}
+          onMouseOut={this.mouseOut}
+          onKeyUp={this.setParagraph}
+          id='editor'
+          suppressContentEditableWarning={true}
+          onClick={this.showPlucButton}
+        >
+        <p className='paragraph_editor'></p>
+        </div>
       </div>
       <button onClick={this.save} >save</button>
         {showPopUp &&
@@ -240,20 +554,23 @@ class Editor extends Component {
         }
         {showHoverLink &&
           <PopupHoverLink 
-            popOverPosition={this.state.popOverPosition}
+            popOverPositionLink={popOverPositionLink}
             hoverLink={hoverLink}
-        />
-
-        }
+        />}
+        {showWidgetsPopUp &&
+          <PopupWidgets
+            handleCloseWidgets={this.handleCloseWidgets}
+            addPicture={this.addPicture}
+            popOverPositionWidgets={popOverPositionWidgets}
+            addInputYoutube={this.addInputYoutube}
+            addSoundcloud={this.addSoundcloud}
+            addVimeo={this.addVimeo}
+            addTwitter={this.addTwitter}
+          />}
       </Fragment>
     );
   }
 }
-
-const Paragraph = React.forwardRef(({index}, ref) => (
-  <p index={index} ref={ref} className='paragraph_editor'></p>
-))
-
 
 class Popup extends Component {
   render() {
@@ -262,7 +579,7 @@ class Popup extends Component {
       <div className='wrapper'>
         <div className='background' onClick={handleClose}>
           <div className='window' 
-            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
+            style={{top: `${popOverPosition.top-20}px`, left: `${popOverPosition.left-110}px` }}
             onClick={e => e.stopPropagation()}>
             {showInput ? 
               <Fragment>
@@ -279,7 +596,7 @@ class Popup extends Component {
                 }
                 
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'strikethrough')} className='button'>S</button>
-                <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={LinkIcon} className='button' alt="link" />
+                <img onClick={(e) => this.props.handleChangeStyle(e, 'createLink')} style={{width: '20px'}} src={selectedTag === 'a' ? LinkIconSelect : LinkIcon} className='button' alt="link" />
                 <div className='divider'></div>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'h1')} style={selectedTag === 'h1' ? {color: '#5cb8ff'}: {}} className='button'>H1</button>
                 <button onClick={(e) => this.props.handleChangeStyle(e, 'h2')} style={selectedTag === 'h2' ? {color: '#5cb8ff'}: {}} className='button'>H2</button>
@@ -297,14 +614,35 @@ class Popup extends Component {
 
 class PopupHoverLink extends Component {
   render() {
-    const { popOverPosition, hoverLink } = this.props
+    const { popOverPositionLink, hoverLink } = this.props
     return (
       <div className='wrapper' style={{position: 'absolute', height: 'auto', width: 'auto'}} >
         <div className='background' style={{position: 'absolute'}}>
           <div className='window' 
-            style={{top: `${popOverPosition.top - 113}px`, left: `${popOverPosition.left - 134}px` }}
+            style={{top: `${popOverPositionLink.top - 113}px`, left: `${popOverPositionLink.left - 134}px` }}
             onClick={e => e.stopPropagation()}>
             <a href={hoverLink} target={'_blank'}>{hoverLink}</a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+class PopupWidgets extends Component {
+  render() {
+    const { handleCloseWidgets, addPicture, popOverPositionWidgets, addInputYoutube, addSoundcloud, addVimeo, addTwitter} = this.props
+    return (
+      <div className='wrapper' >
+        <div className='background' onClick={handleCloseWidgets} >
+          <div className='window_widget' 
+            style={{top: `${popOverPositionWidgets.top+41}px`, left: '36%' }}
+            onClick={e => e.stopPropagation()}>
+              <CameraIcon onClick={addPicture}  style={{fill: '#fff'}} className='button' />
+              <YoutubeIcon onClick={addInputYoutube}  className='button' />
+              <SoundcloudIcon onClick={addSoundcloud} style={{fill: '#ff7700'}} className='button' />
+              <VimeoIcon onClick={addVimeo} style={{fill: '#4EBBFF'}} className='button' />
+              <TwitterIcon onClick={addTwitter} style={{fill: '#38A1F3'}} className='button' />
           </div>
         </div>
       </div>
