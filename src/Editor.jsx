@@ -644,6 +644,7 @@ class Editor extends Component {
         isShowPlucButton: false
       })
       const url = e.target.value
+      console.log('eee', url)
       let iframe = document.createElement('iframe')
       iframe.src = `https://w.soundcloud.com/player/?url=${url}`
       iframe.width = '100%'
@@ -688,17 +689,17 @@ class Editor extends Component {
     let match = url.match(regExp)
     if(match && match[1]) {
       let iframe = document.createElement('iframe')
-    iframe.src = `//player.vimeo.com/video/${match[1]}`
-    iframe.width = '100%'
-    iframe.height = '215px'
-    iframe.setAttribute('allowFullScreen', '')
-    const newDiv = document.createElement("div")
-    newDiv.className = 'paragraph_vimeo'
-    newDiv.contentEditable='false'
-    const div = e.target.parentNode
-    const parent = div.parentNode
-    parent.replaceChild(newDiv, div)
-    newDiv.appendChild(iframe)
+      iframe.src = `//player.vimeo.com/video/${match[1]}`
+      iframe.width = '100%'
+      iframe.height = '215px'
+      iframe.setAttribute('allowFullScreen', '')
+      const newDiv = document.createElement("div")
+      newDiv.className = 'paragraph_vimeo'
+      newDiv.contentEditable='false'
+      const div = e.target.parentNode
+      const parent = div.parentNode
+      parent.replaceChild(newDiv, div)
+      newDiv.appendChild(iframe)
     } else {
       console.log('bad link vimeo')
       this.handleRetryLink(e, 'vimeo')
@@ -894,10 +895,9 @@ class PopupWidgets extends Component {
   render() {
     const { handleCloseWidgets, addPicture, popOverPositionWidgets, addInputYoutube, addSoundcloud, addVimeo, addTwitter} = this.props
     return (
-      <div className='wrapper' >
-        <div className='background' onClick={handleCloseWidgets} >
+        <OnClickOutside cbOnClickOutside={handleCloseWidgets}>
           <div className='window_widget' 
-            style={{top: `${popOverPositionWidgets.top+41}px`, left: '36%' }}
+            style={{top: `${popOverPositionWidgets.top+70}px`, left: '36%', right: '45%' }}
             onClick={e => e.stopPropagation()}>
               <CameraIcon onClick={addPicture}  style={{fill: '#fff'}} className='button' />
               <YoutubeIcon onClick={addInputYoutube}  className='button' />
@@ -905,9 +905,25 @@ class PopupWidgets extends Component {
               <VimeoIcon onClick={addVimeo} style={{fill: '#4EBBFF'}} className='button' />
               <TwitterIcon onClick={addTwitter} style={{fill: '#38A1F3'}} className='button' />
           </div>
-        </div>
-      </div>
+        </OnClickOutside>
     )
+  }
+}
+
+class OnClickOutside extends Component {
+  constructor(props){
+      super(props)
+  }
+  componentDidMount(){ document.addEventListener('click', this.handleClickOutside) }
+  componentWillUnmount() { document.removeEventListener('click', this.handleClickOutside) }
+
+  handleClickOutside = e => {
+      if(!this.node.contains(e.target)){
+          this.props.cbOnClickOutside()
+      }
+  }
+  render(){
+      return <div style={{...this.props.style}} ref={node => this.node=node}>{this.props.children}</div>
   }
 }
 
