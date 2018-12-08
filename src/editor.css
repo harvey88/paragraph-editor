@@ -220,3 +220,12 @@ blockquote {
 .paragraph_input_add_twitter:focus {
   outline: none;
 }
+
+.paragraph_badlink_wraper{
+  display: flex;
+  border: 1px solid;
+  justify-content: space-between;
+  padding: 6px;
+  border-radius: 10px;
+  margin: 15px 0;
+}

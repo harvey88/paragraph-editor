@@ -28,7 +28,8 @@ class Editor extends Component {
       indexParagraph: null,
       showWidgetsPopUp: false,
       currentDomNode: null,
-      countInputID: 1
+      countInputID: 1,
+      changeNodeBlock: null
     }
   }
 
@@ -511,13 +512,110 @@ class Editor extends Component {
       parent.replaceChild(newDiv, div)
       newDiv.appendChild(iframe)
     } else {
-      // const selectedText = window.getSelection()
-      // this.setState({
-      //   currentDomNode: selectedText.anchorNode.firstChild
-      // }, console.log('currentDomNode', selectedText))
-      // this.addInputYoutube()
-      console.log('bad link youtube')
+      this.handleRetryLink(e, 'youtube')
     }
+  }
+
+  handleRetryLink = (e, flag) => {
+    e.stopPropagation()
+    const divWrapper = document.createElement("div")
+    divWrapper.className = 'paragraph_badlink_wraper'
+    divWrapper.contentEditable='false'
+
+    const span = document.createElement('span')
+    span.className = 'paragraph_badlink'
+    span.innerText = 'Fail URl'
+
+    const spanWrapper = document.createElement('span')
+    spanWrapper.className = 'paragraph_badlink_wraper_button'
+
+    const buttonRetry = document.createElement('button')
+    buttonRetry.className = 'paragraph_wraper_button_retry'
+    buttonRetry.innerText = 'Retry'
+
+    const buttonClose = document.createElement('button')
+    buttonClose.innerText = 'X'
+    buttonClose.className = 'paragraph_wraper_button_close'
+    buttonClose.onclick = this.resetField
+    
+    const div = e.target.parentNode
+    const parent = div.parentNode
+    parent.replaceChild(divWrapper, div)
+    divWrapper.appendChild(span)
+    divWrapper.appendChild(spanWrapper)
+    spanWrapper.appendChild(buttonRetry)
+    spanWrapper.appendChild(buttonClose)
+    switch(flag) {
+      // case 'youtube': {
+      //   return buttonRetry.addEventListener('click', this.retryAddLink.bind(this, e, flag)) e - does not work
+      // }  
+      case 'youtube':  return buttonRetry.onclick = this.retryAddLinkTube
+      case 'vimeo':  return buttonRetry.onclick = this.retryAddLinkVimeo
+      case 'twitter': return buttonRetry.onclick = this.retryAddLinkTwiter
+    }
+  }
+
+  retryAddLinkTube = (e) => {
+    e.stopPropagation()
+    const div = document.createElement("div")
+    div.className = `paragraph_add_youtube`
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedYoutube
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
+    input.className = `paragraph_input_add_youtube`
+    input.placeholder = `Add link to youtube`
+    const parentDiv = e.target.parentNode
+    const parent = parentDiv.parentNode
+    parent.replaceWith(div)
+    div.appendChild(input)
+  }
+
+  retryAddLinkVimeo = (e) => {
+    e.stopPropagation()
+    const div = document.createElement("div")
+    div.className = `paragraph_add_vimeo`
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedVimeo
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
+    input.className = `paragraph_input_add_vimeo`
+    input.placeholder = `Add link to vimeo`
+    const parentDiv = e.target.parentNode
+    const parent = parentDiv.parentNode
+    parent.replaceWith(div)
+    div.appendChild(input)
+  }
+
+  retryAddLinkTwiter = (e) => {
+    e.stopPropagation()
+    const div = document.createElement("div")
+    div.className = `paragraph_add_twitter`
+    div.contentEditable='false'
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.onchange = this.embedTwitter
+    input.onclick = this.closePlucButton
+    input.onmouseup = this.closePopUpEdit
+    input.className = `paragraph_input_add_twitter`
+    input.placeholder = `Add link to twitter`
+    const parentDiv = e.target.parentNode
+    const parent = parentDiv.parentNode
+    parent.replaceWith(div)
+    div.appendChild(input)
+  }
+
+  resetField = (e) => {
+    e.stopPropagation()
+    const newP = document.createElement('p')
+    newP.className = 'paragraph_editor'
+    const parentDiv = e.target.parentNode
+    const parent = parentDiv.parentNode
+    parent.replaceWith(newP)
   }
 
   addSoundcloud = () => {
@@ -603,7 +701,7 @@ class Editor extends Component {
     newDiv.appendChild(iframe)
     } else {
       console.log('bad link vimeo')
-      return 'error'
+      this.handleRetryLink(e, 'vimeo')
     }
     
   }
@@ -658,7 +756,7 @@ class Editor extends Component {
         })
     } else {
       console.log('bad link twitter')
-      return null
+      this.handleRetryLink(e, 'twitter')
     }
   }
 
