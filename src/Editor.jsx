@@ -279,8 +279,6 @@ class Editor extends Component {
       }
     }
     if(event.keyCode === 13) {
-      // console.log('enter on div')
-      // document.execCommand('defaultParagraphSeparator', false, 'p')
       this.createNode()
     }
   }
@@ -468,11 +466,24 @@ class Editor extends Component {
     input.onchange = this.embedYoutube
     input.onclick = this.closePlucButton
     input.onmouseup = this.closePopUpEdit
+    input.onkeyup = this.forbidAddLnk
     input.className = 'paragraph_input_add_youtube'
     input.placeholder = 'Add link to youtube'
     const parent = currentDomNode.parentNode     
     parent.insertBefore(div, currentDomNode)
     div.appendChild(input)
+  }
+
+  forbidAddLnk = (e) => {
+    if (e.keyCode === 13) {
+      if(e.target.value === '') {
+        e.stopPropagation()
+        this.setState({
+          isShowPlucButton: false,
+          showPopUp: false
+        })
+      }
+    }
   }
 
   closePlucButton = (e) => {
@@ -632,6 +643,7 @@ class Editor extends Component {
     input.onchange = this.embedSoundcloud
     input.onclick = this.closePlucButton
     input.onmouseup = this.closePopUpEdit
+    input.onkeyup = this.forbidAddLnk
     input.className = 'paragraph_input_add_soundcloud'
     input.placeholder = 'Add link to soundcloud'
     const parent = currentDomNode.parentNode     
@@ -673,6 +685,7 @@ class Editor extends Component {
     input.onchange = this.embedVimeo
     input.onclick = this.closePlucButton
     input.onmouseup = this.closePopUpEdit
+    input.onkeyup = this.forbidAddLnk
     input.className = 'paragraph_input_add_vimeo'
     input.placeholder = 'Add link to Vimeo'
     const parent = currentDomNode.parentNode     
@@ -721,6 +734,7 @@ class Editor extends Component {
     input.onchange = this.embedTwitter
     input.onclick = this.closePlucButton
     input.onmouseup = this.closePopUpEdit
+    input.onkeyup = this.forbidAddLnk
     input.className = 'paragraph_input_add_twitter'
     input.placeholder = 'Add link to twitter'
     const parent = currentDomNode.parentNode     
