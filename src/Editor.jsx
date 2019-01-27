@@ -265,7 +265,7 @@ class Editor extends Component {
     if(event.keyCode === 8) {
       if (this.option.childNodes.length === 0) {
         const basicElement = document.createElement('p')
-        basicElement.className = 'paragraph_editor'
+        basicElement.className = 'paragraph_editor paragraph_placeholder'
         this.option.appendChild( basicElement )
         if(basicElement) {
           this.setState({
@@ -405,10 +405,19 @@ class Editor extends Component {
         top: topPositionBtn
       }
     })
-    if(selectedText.anchorNode.nodeValue) {
+    if(Boolean(selectedText.anchorNode.nodeValue) || Boolean(e.target.innerText)) {
       this.setState({ isShowPlucButton: false })
     } else {
       this.setState({ isShowPlucButton: true })
+    }
+    if(selectedText.anchorNode.id === 'editor'){
+      this.setState({
+        currentDomNode: selectedText.anchorNode.firstChild,
+        showPlucButtonPosition: selectedText.anchorNode.firstChild.offsetTop,
+        popOverPositionWidgets: {
+          top: selectedText.anchorNode.firstChild.offsetTop
+        }
+      })
     }
   }
 
@@ -489,7 +498,8 @@ class Editor extends Component {
   closePlucButton = (e) => {
     e.stopPropagation()
     this.setState({
-      isShowPlucButton: false
+      isShowPlucButton: false,
+      showPopUp: false
     })
   }
 
@@ -503,7 +513,9 @@ class Editor extends Component {
 
   embedYoutube = e => {
     e.stopPropagation()
+    console.log('youtube', e.target.value)
     this.setState({
+      showWidgetsPopUp: false,
       isShowPlucButton: false
     })
     const url = e.target.value
@@ -811,10 +823,10 @@ class Editor extends Component {
           suppressContentEditableWarning={true}
           onClick={this.showPlucButton}
         >
-        <p className='paragraph_editor'></p>
+        <p className='paragraph_editor paragraph_placeholder'></p>
         </div>
       </div>
-      <button onClick={this.save} >save</button>
+      <button className='save_button' onClick={this.save} >Save</button>
         {showPopUp &&
           <Popup 
             handleClose={this.handleClose}

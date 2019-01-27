@@ -4,13 +4,14 @@
 
 .article_editor_wrapper {
   width: 400px;
+  /* width: 80%; */
   outline: none;
   margin: 80px auto;
   position: relative;
 }
 .article_editor{
   outline: none;
-  background: #E0F2F1;
+  /* background: #E0F2F1; */
   padding: 10px;
   border-radius: 5px;
   position: relative;
@@ -42,9 +43,15 @@
   font-size: 12px;
 }
 
-.article_editor > h1 > i,
-.article_editor > h2 > i,
-.article_editor > h3 > i
+.paragraph_placeholder:empty::before{
+  content: 'Begin writing your story...';
+  color: gray;
+  font-size: 12px;
+}
+
+.article_editor > h1 > * > i,
+.article_editor > h2 > * > i,
+.article_editor > h3 > * > i
 {
   font-style: normal;
 }
@@ -228,4 +235,14 @@ blockquote {
   padding: 6px;
   border-radius: 10px;
   margin: 15px 0;
+}
+
+.save_button {
+  display: block;
+    margin: 0 auto;
+    padding: 10px 50px;
+    background: transparent;
+    border: 2px solid #58afd1;
+    color: #58afd1;
+    cursor: pointer;
 }
